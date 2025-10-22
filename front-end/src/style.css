@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+html {
+    scroll-behavior: smooth;
+}
+
+body, html {
+    height: 100vh;
+}
+
+.my-custom-fade-enter-active {
+    -webkit-animation-name: fadeIn;
+    animation-name: fadeIn
+}
+
+.my-custom-fade-leave-active {
+    -webkit-animation-name: fadeOut;
+    animation-name: fadeOut
+}
+
+.my-custom-fade-move {
+    -webkit-transition-timing-function: ease-in-out;
+    transition-timing-function: ease-in-out;
+    -webkit-transition-property: all;
+    transition-property: all;
+    -webkit-transition-duration: .4s;
+    transition-duration: .4s
+}

@@ -1,0 +1,161 @@
+<template>
+    <Layout>
+        <div class="max-w-2xl mx-auto mt-8 space-y-6">
+            <h2 class="text-2xl font-bold mb-4">Feed</h2>
+
+            <!-- Loop de posts -->
+            <div
+                v-for="post in posts"
+                :key="post.id"
+                class="bg-white rounded-xl shadow-md overflow-hidden border"
+            >
+                <div class="flex items-center p-4">
+                    <img
+                        :src="post.userAvatar"
+                        alt="User avatar"
+                        class="w-10 h-10 rounded-full mr-3"
+                    />
+                    <div>
+                        <p class="font-semibold">{{ post.userName }}</p>
+                        <p class="text-gray-500 text-sm">{{ formatDate(post.date) }}</p>
+                    </div>
+                </div>
+
+                <div class="w-full">
+                    <img :src="post.image" alt="Post image" class="w-full max-h-[500px] object-cover" />
+                </div>
+
+                <div class="px-4 py-2 flex items-center space-x-4">
+                    <button
+                        @click="toggleLike(post)"
+                        class="focus:outline-none"
+                    >
+                        <span
+                            :class="post.liked ? 'text-red-500' : 'text-gray-400'"
+                            class="text-xl"
+                        >
+                            ❤️
+                        </span>
+                    </button>
+                    <span class="text-gray-600 text-sm">{{ post.likes }} curtidas</span>
+                </div>
+
+                <div class="px-4 text-gray-800 mb-2">
+                    <span class="font-semibold mr-1">{{ post.userName }}</span>
+                    {{ post.caption }}
+                </div>
+
+                <div class="px-4 mb-2 space-y-1">
+                    <p
+                        v-for="(comment, index) in post.comments"
+                        :key="index"
+                        class="text-sm text-gray-700"
+                    >
+                        <span class="font-semibold">{{ comment.user }}:</span>
+                        {{ comment.text }}
+                    </p>
+                </div>
+
+                <div class="px-4 py-2 border-t flex items-center">
+                    <input
+                        v-model="post.newComment"
+                        type="text"
+                        placeholder="Adicione um comentário..."
+                        class="flex-1 text-sm px-3 py-2 outline-none"
+                        @keyup.enter="addComment(post)"
+                    />
+                    <button
+                        @click="addComment(post)"
+                        class="text-blue-500 font-semibold text-sm"
+                    >
+                        Publicar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </Layout>
+</template>
+
+<script>
+import Layout from "../../components/layout.vue";
+
+export default {
+    name: "Home",
+    components: { Layout },
+    data() {
+        return {
+            userName: "Thalles Dreissig",
+            userAvatar: 'https://i.pravatar.cc/150?img=3',
+            posts: [
+                {
+                    id: 1,
+                    userName: "Thalles Dreissig",
+                    userAvatar: "https://i.pravatar.cc/150?img=3",
+                    image: "https://picsum.photos/600/400?random=1",
+                    caption: "Primeiro post! 🚀",
+                    date: new Date(),
+                    likes: 12,
+                    liked: false,
+                    comments: [
+                        { user: "Ana", text: "Ficou massa!" },
+                        { user: "João", text: "👏👏" },
+                    ],
+                    newComment: "",
+                },
+                {
+                    id: 2,
+                    userName: "Maria Clara",
+                    userAvatar: "https://i.pravatar.cc/150?img=6",
+                    image: "https://picsum.photos/600/400?random=2",
+                    caption: "Curtindo o dia 😎",
+                    date: new Date(),
+                    likes: 7,
+                    liked: false,
+                    comments: [],
+                    newComment: "",
+                },
+            ],
+        };
+    },
+    methods: {
+        formatDate(date) {
+            return new Date(date).toLocaleString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+        },
+        toggleLike(post) {
+            post.liked = !post.liked;
+            post.likes += post.liked ? 1 : -1;
+        },
+        addComment(post) {
+            if (!post.newComment.trim()) return;
+            post.comments.push({
+                user: this.userName,
+                text: post.newComment,
+            });
+            post.newComment = "";
+        },
+    },
+
+    // mounted() {
+    //     const storedUser = localStorage.getItem('user');
+    //     if (storedUser) {
+    //         const user = JSON.parse(storedUser);
+    //         this.userName = user.name;
+    //         this.userAvatar = user.avatar_url
+    //             ? `http://localhost:3000${user.avatar_url}`
+    //             : 'https://i.pravatar.cc/150?img=1';
+    //     }
+    // }
+};
+</script>
+
+<style scoped>
+/* só pra dar um leve destaque ao input */
+input::placeholder {
+    color: #aaa;
+}
+</style>

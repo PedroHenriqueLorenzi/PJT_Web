@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"typeRoots": ["./src/types", "./node_modules/@types"],
+		"target": "ES6",
+		"module": "commonjs",
+		"strict": true,
+		"baseUrl": "./",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"outDir": "./dist"
+	},
+	"include": [
+		"src/**/*",
+		"src/**/*.d.ts"
+	],
+	"exclude": ["node_modules"]
+}

@@ -1,0 +1,27 @@
+{
+	"scripts": {
+		"dev": "env-cmd -f .env.local -- nodemon --exec ts-node -r tsconfig-paths/register index.ts",
+		"build": "tsc"
+	},
+	"dependencies": {
+		"bcrypt": "^6.0.0",
+		"cors": "^2.8.5",
+		"express": "^5.1.0",
+		"jsonwebtoken": "^9.0.2",
+		"mongodb": "^6.8.0",
+		"swagger-jsdoc": "^6.2.8",
+		"swagger-ui-express": "^5.0.1",
+		"tsconfig-paths-webpack-plugin": "^4.2.0",
+		"webpack-node-externals": "^3.0.0"
+	},
+	"devDependencies": {
+		"@types/bcrypt": "^6.0.0",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.3",
+		"@types/jsonwebtoken": "^9.0.8",
+		"@types/swagger-jsdoc": "^6.0.4",
+		"@types/swagger-ui-express": "^4.1.8",
+		"env-cmd": "^11.0.0",
+		"nodemon": "^3.1.10"
+	}
+}
