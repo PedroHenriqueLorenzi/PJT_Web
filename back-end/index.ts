@@ -1,5 +1,4 @@
 import express from 'express';
-import { setupSwagger } from './src/swagger';
 import Singleton from './src/singleton';
 import cors from 'cors'
 
@@ -37,11 +36,8 @@ async function main() {
         .use(tagRouter)
         .use(communityRouter);
 
-    setupSwagger(app);
-
     app.listen(Number(process.env.PORT), process.env.ADDRESS, () => {
         console.log(`API running on http://${process.env.ADDRESS}:${Number(process.env.PORT)}`);
-        console.log(`Swagger docs available at http://${process.env.ADDRESS}:${Number(process.env.PORT)}/api-docs`);
     });
 }
 

@@ -85,10 +85,9 @@ export default {
             store: systemStore(),
             options: [
                 { text: "Página inicial", route: "/", icon: HomeIcon },
-                { text: "Usuários", route: "/usuarios", icon: UsersIcon },
+                { text: "Usuários", route: "/users", icon: UsersIcon },
                 { text: "Configurações", route: "/config", icon: Cog6ToothIcon },
-                { text: "Amigos", route: "/amigos", icon: UserGroupIcon },
-                { text: "Criar um post", route: "/criar-post", icon: PencilSquareIcon },
+                { text: "Criar um post", route: "/create-post", icon: PencilSquareIcon },
             ],
         };
     },
