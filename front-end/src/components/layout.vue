@@ -1,35 +1,52 @@
 <template>
-    <div v-if="!loading" class="h-screen flex flex-col overflow-hidden  text-gray-200">
-        <header class="bg-[#0f0f0f] text-white flex items-center justify-between px-6 h-16 flex-shrink-0 shadow-lg">
-            <div class="flex items-center space-x-4">
+    <div v-if="!loading" class="h-screen flex flex-col overflow-hidden text-gray-200">
+        <!-- Header -->
+        <header class="bg-[#0f0f0f] text-white flex items-center justify-between px-4 h-16 flex-shrink-0 shadow-lg">
+            <!-- Mobile: Hamburguer -->
+            <button
+                @click="toggleMenu"
+                class="md:hidden text-gray-300 hover:text-green-400 focus:outline-none"
+            >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        v-if="!isMenuOpen"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16"
+                    />
+                    <path
+                        v-else
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+
+            <!-- Desktop Header: PTJ logo -->
+            <div class="hidden md:flex items-center space-x-3">
                 <img src="@/assets/images/download.jpg" alt="Logo" class="w-10 h-10 rounded-full" />
                 <h1 class="text-xl font-bold text-green-400">PTJ</h1>
             </div>
 
-            <div class="flex items-center space-x-4">
-                <button class="relative text-gray-300 hover:text-green-400 transition">
-                    <BellIcon class="w-6 h-6" />
-                    <span class="absolute top-0 right-0 block w-2.5 h-2.5 bg-red-500 rounded-full"></span>
-                </button>
-
+            <!-- User info (desktop & mobile) -->
+            <div class="flex items-center space-x-3">
                 <span class="text-gray-300">{{ store.user.name }}</span>
-
-                <div class="flex items-center space-x-4">
-                    <img :src="`http://localhost:3000${store.user.avatar_url}`" alt="Logo" class="w-10 h-10 rounded-full" />
-                </div>
-
-                <button
-                    @click="logout"
-                    class="flex items-center bg-green-600 px-3 py-1 rounded hover:bg-green-500 transition space-x-2"
-                >
-                    <ArrowRightOnRectangleIcon class="w-5 h-5 text-white" />
-                    <span>Sair</span>
-                </button>
+                <img
+                    :src="`http://localhost:3000${store.user.avatar_url}`"
+                    alt="Usuário"
+                    class="w-10 h-10 rounded-full"
+                />
             </div>
         </header>
 
         <div class="flex flex-1 overflow-hidden">
-            <nav class="w-64 bg-[#1E1E1E] border-r border-gray-700 p-4 flex-shrink-0 flex flex-col justify-between overflow-y-auto">
+            <!-- Sidebar Desktop -->
+            <nav
+                class="hidden md:flex w-64 bg-[#1E1E1E] border-r border-gray-700 p-4 flex-shrink-0 flex flex-col justify-between overflow-y-auto"
+            >
                 <ul class="space-y-2">
                     <li v-for="item in options" :key="item.route">
                         <router-link
@@ -41,9 +58,18 @@
                             <span>{{ item.text }}</span>
                         </router-link>
                     </li>
+                    <li>
+                        <button
+                            @click="logout"
+                            class="flex items-center w-full px-4 py-2 mt-2 rounded text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400 cursor-pointer transition space-x-2 justify-start"
+                        >
+                            <ArrowRightOnRectangleIcon class="w-5 h-5" />
+                            <span>Sair</span>
+                        </button>
+                    </li>
                 </ul>
 
-                <!-- Ícones no rodapé -->
+                <!-- Footer Desktop -->
                 <div class="mt-4 flex space-x-4 justify-center">
                     <a href="https://github.com/seu-usuario/seu-repositorio" target="_blank" class="text-gray-400 hover:text-green-400 transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -57,7 +83,45 @@
                 </div>
             </nav>
 
-            <main class="flex-1  p-6 overflow-y-auto">
+            <!-- Sidebar Mobile -->
+            <transition name="slide">
+                <nav
+                    v-if="isMenuOpen"
+                    class="absolute z-50 top-16 left-0 w-64 bg-[#1E1E1E] border-r border-gray-700 p-4 flex flex-col justify-start h-full md:hidden overflow-y-auto"
+                >
+                    <!-- Logo + PTJ no topo -->
+                    <div class="flex items-center space-x-3 mb-6">
+                        <img src="@/assets/images/download.jpg" alt="Logo" class="w-10 h-10 rounded-full" />
+                        <h1 class="text-xl font-bold text-green-400">PTJ</h1>
+                    </div>
+
+                    <!-- Links -->
+                    <ul class="space-y-2">
+                        <li v-for="item in options" :key="item.route">
+                            <router-link
+                                @click="isMenuOpen = false"
+                                :to="item.route"
+                                class="flex items-center px-4 py-2 rounded transition text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400"
+                                active-class="bg-[#2A2A2A] text-green-400 font-semibold"
+                            >
+                                <component :is="item.icon" class="w-5 h-5 mr-3" />
+                                <span>{{ item.text }}</span>
+                            </router-link>
+                        </li>
+                        <li>
+                            <button
+                                @click="logout"
+                                class="flex items-center w-full px-4 py-2 mt-2 rounded text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400 cursor-pointer transition space-x-2 justify-start"
+                            >
+                                <ArrowRightOnRectangleIcon class="w-5 h-5" />
+                                <span>Sair</span>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </transition>
+
+            <main class="flex-1 p-6 overflow-y-auto">
                 <slot></slot>
             </main>
         </div>
@@ -65,60 +129,76 @@
 </template>
 
 <script>
-import {
-    HomeIcon,
-    UsersIcon,
-    Cog6ToothIcon,
-    UserGroupIcon,
-    PencilSquareIcon,
-    BellIcon,
-    ArrowRightOnRectangleIcon
-} from "@heroicons/vue/24/outline";
-
-import {systemStore} from "../stores/index.js"
-
-export default {
-    name: "Layout",
-    data() {
-        return {
-            loading: true,
-            store: systemStore(),
-            options: [
-                { text: "Página inicial", route: "/", icon: HomeIcon },
-                { text: "Usuários", route: "/users", icon: UsersIcon },
-                { text: "Configurações", route: "/config", icon: Cog6ToothIcon },
-                { text: "Criar um post", route: "/create-post", icon: PencilSquareIcon },
-            ],
-        };
-    },
-    methods: {
-        logout() {
-            localStorage.removeItem("token");
-            this.$router.push("/login");
-        },
-    },
-    mounted() {
-        const storedUser = localStorage.getItem('user');
-        console.log(storedUser)
-        if (storedUser) {
-            this.store.user = JSON.parse(storedUser);
-
-            this.loading = false;
-            // const user = JSON.parse(storedUser);
-            // this.userName = user.name;
-            // this.userAvatar = user.avatar_url
-            //     ? `http://localhost:3000${user.avatar_url}`
-            //     : 'https://i.pravatar.cc/150?img=1';
-        }
-    },
-    components: {
+    import {
         HomeIcon,
         UsersIcon,
         Cog6ToothIcon,
         UserGroupIcon,
         PencilSquareIcon,
         BellIcon,
-        ArrowRightOnRectangleIcon,
-    },
-};
+        ArrowRightOnRectangleIcon
+    } from "@heroicons/vue/24/outline";
+
+    import { systemStore } from "../stores/index.js";
+
+    export default {
+        name: "Layout",
+        data() {
+            return {
+                loading: true,
+                isMenuOpen: false,
+                store: systemStore(),
+                options: [
+                    { text: "Página inicial", route: "/", icon: HomeIcon },
+                    { text: "Usuários", route: "/users", icon: UsersIcon },
+                    { text: "Configurações", route: "/config", icon: Cog6ToothIcon },
+                    { text: "Criar um post", route: "/create-post", icon: PencilSquareIcon },
+                ],
+            };
+        },
+        methods: {
+            logout() {
+                localStorage.removeItem("token");
+                this.$router.push("/login");
+            },
+            toggleMenu() {
+                this.isMenuOpen = !this.isMenuOpen;
+            },
+        },
+        mounted() {
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                this.store.user = JSON.parse(storedUser);
+                this.loading = false;
+            }
+        },
+        components: {
+            HomeIcon,
+            UsersIcon,
+            Cog6ToothIcon,
+            UserGroupIcon,
+            PencilSquareIcon,
+            BellIcon,
+            ArrowRightOnRectangleIcon,
+        },
+    };
 </script>
+
+<style>
+    .slide-enter-active,
+    .slide-leave-active {
+        transition: transform 0.3s ease;
+    }
+    .slide-enter-from {
+        transform: translateX(-100%);
+    }
+    .slide-enter-to {
+        transform: translateX(0);
+    }
+    .slide-leave-from {
+        transform: translateX(0);
+    }
+    .slide-leave-to {
+        transform: translateX(-100%);
+    }
+</style>
