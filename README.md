@@ -3,7 +3,7 @@
 ## 📋 Requisitos do Projeto
 
 ✅ A aplicação deve ser acessível apenas após autenticação  
-🛠️ A aplicação deve permitir o cadastro de novos usuários  
+✅ A aplicação deve permitir o cadastro de novos usuários  
 🛠️ Quando autenticado, o usuário deve poder atualizar seu cadastro  
 ✅ Deve existir alguma base de dados no back-end (ex: **MongoDB**)  
 🛠️ Deve ser possível compartilhar dados entre usuários  
