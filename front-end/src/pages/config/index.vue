@@ -57,7 +57,7 @@
                     <div class="relative group">
                         <img
                             v-if="previewAvatar"
-                            :src="previewAvatar"
+                            :src="`http://localhost:3000${previewAvatar}`"
                             class="w-32 h-32 rounded-full object-cover shadow-md border-2 border-green-600"
                         />
                         <div
@@ -123,7 +123,12 @@ export default {
     methods: {
         async loadUserData() {
             try {
-                const response = await axios.get("/api/user");
+                const response = await axios.get("/api/users/me", {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
                 const user = response.data;
                 this.name = user.name;
                 this.username = user.username;
@@ -131,6 +136,8 @@ export default {
                 this.age = user.age;
                 this.notification = user.notification;
                 this.previewAvatar = user.avatar_url;
+
+                console.log("User data loaded:", this.name);
             } catch (err) {
                 console.error(err);
                 useToast().error("Erro ao carregar informações do usuário.");

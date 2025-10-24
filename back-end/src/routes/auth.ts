@@ -13,66 +13,6 @@ const router = Router();
 const SESSION_TIMEOUT = 60 * 60 * 1000;
 const JWT_SECRET = process.env.SECRET_KEY!;
 
-/**
- * @swagger
- * /login:
- *   post:
- *     summary: Autentica um usuário e retorna um token JWT
- *     tags:
- *       - Auth
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 format: password
- *     responses:
- *       200:
- *         description: Login bem-sucedido, retorna usuário e token
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                     name:
- *                       type: string
- *                     username:
- *                       type: string
- *                     email:
- *                       type: string
- *                     age:
- *                       type: number
- *                     notification:
- *                       type: boolean
- *                     avatar_url:
- *                       type: string
- *                     token_expires_at:
- *                       type: string
- *                       format: date-time
- *                 token:
- *                   type: string
- *       400:
- *         description: Email ou senha não fornecidos
- *       401:
- *         description: Credenciais inválidas
- *       500:
- *         description: Erro interno do servidor
- */
 router.post('/login', async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
@@ -113,7 +53,10 @@ router.post('/login', async (req: Request, res: Response) => {
             user: {
                 id: userWithoutPassword._id,
                 email: userWithoutPassword.email,
+                username: userWithoutPassword.username,
+                notification: userWithoutPassword.notification,
                 name: userWithoutPassword.name,
+                age: userWithoutPassword.age || null,
                 avatar_url: userWithoutPassword.avatar_url || null,
             },
         });
@@ -126,45 +69,6 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 
-/**
- * @swagger
- * /register:
- *   post:
- *     summary: Cria um novo usuário
- *     tags:
- *       - Auth
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - username
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *               username:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               age:
- *                 type: number
- *               notification:
- *                 type: boolean
- *               avatar_url:
- *                 type: string
- *     responses:
- *       201:
- *         description: Usuário criado com sucesso
- *       400:
- *         description: Parâmetros inválidos
- */
 router.post('/register', async (req: Request, res: Response) => {
     try {
         const { name, username, email, password, age, notification, avatar_url } = req.body;
@@ -197,7 +101,7 @@ router.post('/register', async (req: Request, res: Response) => {
             avatarPath = `/uploads/${fileName}`;
         }
 
-        const createdUser = await userModel.create({
+        await userModel.create({
             name,
             username,
             email,
@@ -210,10 +114,18 @@ router.post('/register', async (req: Request, res: Response) => {
             updatedAt: new Date(),
         });
 
-        return res.status(201).json(createdUser);
+        return res.status(201).json({
+            success: true,
+            message: "Registration successful.",
+        });
+
+
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: 'Internal error!' });
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error.'
+        });
     }
 });
 

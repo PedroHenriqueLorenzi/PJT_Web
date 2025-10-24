@@ -11,11 +11,11 @@
             v-model="internalValue"
             :disabled="disabled"
             :class="[
-        'w-full p-3 border rounded-lg bg-gray-50 transition outline-none',
-        'focus:ring-2 focus:ring-green-600 focus:border-green-600',
-        error ? 'border-red-500' : 'border-gray-300',
-        disabled ? 'bg-gray-200 cursor-not-allowed' : ''
-      ]"
+                'w-full p-3 border rounded-lg bg-gray-50 transition outline-none text-gray-900',
+                'focus:ring-2 focus:ring-green-600 focus:border-green-600',
+                error ? 'border-red-500' : 'border-gray-300',
+                disabled ? 'bg-gray-200 cursor-not-allowed' : ''
+              ]"
         />
 
         <p v-if="error" class="text-sm text-red-500 mt-1">{{ error }}</p>

@@ -4,6 +4,7 @@ import home from '../pages/home/index.vue'
 import login from '../pages/login/index.vue'
 import register from '../pages/register/index.vue'
 import config from '../pages/config/index.vue'
+import post from '../pages/post/index.vue'
 
 
 const routes = [
@@ -27,6 +28,12 @@ const routes = [
         path: '/config',
         name: 'config',
         component: config,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/create-post',
+        name: 'post',
+        component: post,
         meta: { requiresAuth: true },
     },
 ]

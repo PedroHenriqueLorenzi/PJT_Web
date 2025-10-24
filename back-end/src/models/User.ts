@@ -27,16 +27,8 @@ export class User {
         return this.collection().findOne({ email });
     }
 
-    async findByUsername(username: string): Promise<UserInterface | null> {
-        return this.collection().findOne({ username });
-    }
-
     async findById(id: string): Promise<UserInterface | null> {
         return this.collection().findOne({ _id: new ObjectId(id) });
-    }
-
-    async findOne(query: Partial<UserInterface>): Promise<UserInterface | null> {
-        return this.collection().findOne(query);
     }
 
     async create(user: UserInterface): Promise<UserInterface> {
@@ -46,9 +38,5 @@ export class User {
 
     async update(id: string, data: Partial<UserInterface>): Promise<void> {
         await this.collection().updateOne({ _id: new ObjectId(id) }, { $set: data });
-    }
-
-    async delete(id: string): Promise<void> {
-        await this.collection().deleteOne({ _id: new ObjectId(id) });
     }
 }

@@ -33,7 +33,7 @@
 
             <!-- User info (desktop & mobile) -->
             <div class="flex items-center space-x-3">
-                <span class="text-gray-300">{{ store.user.name }}</span>
+                <span class="text-gray-300">{{ store.user.username }}</span>
                 <img
                     :src="`http://localhost:3000${store.user.avatar_url}`"
                     alt="Usuário"
