@@ -1,5 +1,5 @@
 <template>
-    <div v-if="!loading" class="h-screen flex flex-col overflow-hidden text-gray-200">
+    <div v-if="!loading" class="h-screen flex flex-col overflow-hidden">
         <!-- Header -->
         <header class="bg-[#0f0f0f] text-white flex items-center justify-between px-4 h-16 flex-shrink-0 shadow-lg">
             <!-- Mobile: Hamburguer -->
@@ -32,7 +32,7 @@
             </div>
 
             <!-- User info (desktop & mobile) -->
-            <div class="flex items-center space-x-3">
+            <div @click="$router.push('/config')" class="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition">
                 <span class="text-gray-300">{{ store.user.username }}</span>
                 <img
                     :src="`http://localhost:3000${store.user.avatar_url}`"
@@ -48,16 +48,45 @@
                 class="hidden md:flex w-64 bg-[#1E1E1E] border-r border-gray-700 p-4 flex-shrink-0 flex flex-col justify-between overflow-y-auto"
             >
                 <ul class="space-y-2">
-                    <li v-for="item in options" :key="item.route">
-                        <router-link
-                            :to="item.route"
-                            class="flex items-center px-4 py-2 rounded transition text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400"
-                            active-class="bg-[#2A2A2A] text-green-400 font-semibold"
-                        >
-                            <component :is="item.icon" class="w-5 h-5 mr-3" />
-                            <span>{{ item.text }}</span>
-                        </router-link>
+                    <li v-for="item in options" :key="item.route || item.text">
+                        <div v-if="item.children" class="space-y-1">
+                            <div class="flex items-center w-full px-4 py-2 rounded transition text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400 justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <component :is="item.icon" class="w-5 h-5" />
+                                    <span>{{ item.text }}</span>
+                                </div>
+                            </div>
+
+                            <transition name="fade">
+                                <ul class="ml-6 border-l border-gray-700 pl-3 space-y-1">
+                                    <li v-for="sub in item.children" :key="sub.route">
+                                        <router-link
+                                            @click="isMenuOpen = false"
+                                            :to="sub.route"
+                                            class="flex items-center px-3 py-1.5 rounded transition text-gray-400 hover:bg-[#2A2A2A] hover:text-green-400"
+                                            active-class="bg-[#2A2A2A] text-green-400 font-semibold"
+                                        >
+                                            <component :is="sub.icon" class="w-4 h-4 mr-2" />
+                                            <span>{{ sub.text }}</span>
+                                        </router-link>
+                                    </li>
+                                </ul>
+                            </transition>
+                        </div>
+
+                        <div v-else>
+                            <router-link
+                                @click="isMenuOpen = false"
+                                :to="item.route"
+                                class="flex items-center px-4 py-2 rounded transition text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400"
+                                active-class="bg-[#2A2A2A] text-green-400 font-semibold"
+                            >
+                                <component :is="item.icon" class="w-5 h-5 mr-3" />
+                                <span>{{ item.text }}</span>
+                            </router-link>
+                        </div>
                     </li>
+
                     <li>
                         <button
                             @click="logout"
@@ -97,17 +126,55 @@
 
                     <!-- Links -->
                     <ul class="space-y-2">
-                        <li v-for="item in options" :key="item.route">
-                            <router-link
-                                @click="isMenuOpen = false"
-                                :to="item.route"
-                                class="flex items-center px-4 py-2 rounded transition text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400"
-                                active-class="bg-[#2A2A2A] text-green-400 font-semibold"
-                            >
-                                <component :is="item.icon" class="w-5 h-5 mr-3" />
-                                <span>{{ item.text }}</span>
-                            </router-link>
+                        <li v-for="item in options" :key="item.route || item.text">
+                            <!-- Se o item tiver subitens -->
+                            <div v-if="item.children" class="space-y-1">
+                                <button
+                                    @click="toggleSubmenu(item)"
+                                    class="flex items-center w-full px-4 py-2 rounded transition text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400 justify-between"
+                                >
+                                    <div class="flex items-center space-x-2">
+                                        <component :is="item.icon" class="w-5 h-5" />
+                                        <span>{{ item.text }}</span>
+                                    </div>
+                                    <ChevronDownIcon
+                                        class="w-4 h-4 transition-transform duration-200"
+                                        :class="{ 'rotate-180': item.open }"
+                                    />
+                                </button>
+
+                                <transition name="fade">
+                                    <ul v-show="item.open" class="ml-6 border-l border-gray-700 pl-3 space-y-1">
+                                        <li v-for="sub in item.children" :key="sub.route">
+                                            <router-link
+                                                @click="isMenuOpen = false"
+                                                :to="sub.route"
+                                                class="flex items-center px-3 py-1.5 rounded transition text-gray-400 hover:bg-[#2A2A2A] hover:text-green-400"
+                                                active-class="bg-[#2A2A2A] text-green-400 font-semibold"
+                                            >
+                                                <component :is="sub.icon" class="w-4 h-4 mr-2" />
+                                                <span>{{ sub.text }}</span>
+                                            </router-link>
+                                        </li>
+                                    </ul>
+                                </transition>
+                            </div>
+
+                            <!-- Se não tiver subitens -->
+                            <div v-else>
+                                <router-link
+                                    @click="isMenuOpen = false"
+                                    :to="item.route"
+                                    class="flex items-center px-4 py-2 rounded transition text-gray-300 hover:bg-[#2A2A2A] hover:text-green-400"
+                                    active-class="bg-[#2A2A2A] text-green-400 font-semibold"
+                                >
+                                    <component :is="item.icon" class="w-5 h-5 mr-3" />
+                                    <span>{{ item.text }}</span>
+                                </router-link>
+                            </div>
                         </li>
+
+                        <!-- Logout -->
                         <li>
                             <button
                                 @click="logout"
@@ -121,7 +188,7 @@
                 </nav>
             </transition>
 
-            <main class="flex-1 p-6 overflow-y-auto">
+            <main class="flex-1 p-6 overflow-y-auto bg-[#F2F4F7]">
                 <slot></slot>
             </main>
         </div>
@@ -136,7 +203,8 @@
         UserGroupIcon,
         PencilSquareIcon,
         BellIcon,
-        ArrowRightOnRectangleIcon
+        ArrowRightOnRectangleIcon,
+        ChevronDownIcon
     } from "@heroicons/vue/24/outline";
 
     import { systemStore } from "../stores/index.js";
@@ -152,11 +220,22 @@
                     { text: "Página inicial", route: "/", icon: HomeIcon },
                     { text: "Usuários", route: "/users", icon: UsersIcon },
                     { text: "Configurações", route: "/config", icon: Cog6ToothIcon },
+                    {
+                        text: "Comunidades",
+                        icon: BellIcon,
+                        children: [
+                            { text: "Ver comunidades", route: "/communities", icon: UserGroupIcon },
+                            { text: "Criar comunidade", route: "/create-community", icon: UserGroupIcon },
+                        ],
+                    },
                     { text: "Criar um post", route: "/create-post", icon: PencilSquareIcon },
                 ],
             };
         },
         methods: {
+            toggleSubmenu(item) {
+                item.open = !item.open;
+            },
             logout() {
                 localStorage.removeItem("token");
                 this.$router.push("/login");
@@ -180,6 +259,7 @@
             PencilSquareIcon,
             BellIcon,
             ArrowRightOnRectangleIcon,
+            ChevronDownIcon
         },
     };
 </script>

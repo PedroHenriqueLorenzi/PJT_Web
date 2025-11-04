@@ -5,6 +5,8 @@ import login from '../pages/login/index.vue'
 import register from '../pages/register/index.vue'
 import config from '../pages/config/index.vue'
 import post from '../pages/post/index.vue'
+import community from '../pages/community/index.vue'
+import CreateCommunity from '../pages/community/create.vue'
 
 
 const routes = [
@@ -34,6 +36,18 @@ const routes = [
         path: '/create-post',
         name: 'post',
         component: post,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/communities',
+        name: 'communities',
+        component: community,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/create-community',
+        name: 'CreateCommunity',
+        component: CreateCommunity,
         meta: { requiresAuth: true },
     },
 ]

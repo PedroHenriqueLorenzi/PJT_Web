@@ -100,6 +100,7 @@ import Input from "@/components/Input.vue";
 import Layout from "@/components/layout.vue";
 import { useToast } from "vue-toastification";
 import axios from "axios";
+import {handleApiError} from "@/helpers/functions.js";
 
 export default {
     name: "ConfigPage",
@@ -117,9 +118,7 @@ export default {
             loading: false,
         };
     },
-    mounted() {
-        this.loadUserData();
-    },
+
     methods: {
         async loadUserData() {
             try {
@@ -139,8 +138,7 @@ export default {
 
                 console.log("User data loaded:", this.name);
             } catch (err) {
-                console.error(err);
-                useToast().error("Erro ao carregar informações do usuário.");
+                handleApiError(err);
             }
         },
         handleFileUpload(event) {
@@ -189,6 +187,10 @@ export default {
                 this.loading = false;
             }
         },
+    },
+
+    mounted() {
+        this.loadUserData();
     },
 };
 </script>

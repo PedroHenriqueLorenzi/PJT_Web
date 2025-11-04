@@ -20,6 +20,27 @@ router.get('/users/me', async (req: Request, res: Response) => {
 
         res.json(user);
 
+    } catch (err: any) {
+        if (err.status === 401) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        console.error(err);
+        return res.status(500).json({ error: 'Internal error!' });
+    }
+});
+
+router.get('/users', async (req: Request, res: Response) => {
+    try {
+        // await validatedToken(req.headers.authorization);
+        //
+        // const db = await MongoSingleton.getInstance();
+        // const userModel = new User(db);
+        //
+        // const users = await userModel.findAll();
+        //
+        // const usersData = users.map(({ passwordH, notification, ...userData }) => userData);
+        //
+        // return res.json(usersData);
     } catch (err) {
         return res.status(500).json({ error: 'Internal error!' });
     }
