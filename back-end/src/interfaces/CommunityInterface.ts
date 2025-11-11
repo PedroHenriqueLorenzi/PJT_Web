@@ -6,7 +6,7 @@ export interface CommunityInterface {
     description: string;
     type: string;
     created_by: string | ObjectId;
-    image_url?: string;
+    img_url: string;
     createdAt: Date;
     updatedAt: Date;
 }

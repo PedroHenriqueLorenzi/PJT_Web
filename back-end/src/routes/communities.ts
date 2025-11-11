@@ -9,48 +9,65 @@ import {validatedToken} from "@/helpers/functions";
 // Models;
 import {Community} from "@/models/Community";
 import {CommunityMember} from "@/models/CommunityMembers";
+import path from "path";
+import fs from "fs";
 
 
+// Listar todas as comunidades;
 router.get('/communities', async (req: Request, res: Response) => {
     try {
-        // 1. Valida token e pega usuário logado
         const user = await validatedToken(req.headers.authorization);
-        const userId = user._id as string;
-
-        // 2. Conecta ao Mongo
         const db = await MongoSingleton.getInstance();
 
-        // 3. Inicializa os models
         const communitiesModel = new Community(db);
         const communityMembersModel = new CommunityMember(db);
 
-        // 4. Busca os registros de CommunityMember do usuário ativo
-        const memberships = await communityMembersModel.findByUser(userId);
+        const includeAll = req.query.users === 'all';
 
-        // 5. Se não tiver nenhum, retorna array vazio
-        if (!memberships.length) return res.json({ communities: [] });
+        const memberships = await communityMembersModel.findByUser(user._id as string);
+        const userCommunityIds = new Set(memberships.map((m: any) => m.communityId.toString()));
 
-        // 6. Para cada membership, pega os dados da comunidade
-        const communities = await Promise.all(
-            memberships.map(async (membership) => {
-                const community = await communitiesModel.findById(membership.communityId);
-                if (!community) return null;
+        let communities;
 
-                return {
-                    _id: community._id,
-                    name: community.name,
-                    description: community.description,
-                    role: membership.role,
-                    joinedAt: membership.joinedAt,
-                };
-            })
-        );
+        if (includeAll) {
+            const allCommunities = await communitiesModel.findAll();
 
-        // 7. Remove nulls (caso alguma comunidade tenha sido deletada)
-        const filtered = communities.filter(c => c !== null);
+            communities = allCommunities.map((community: any) => ({
+                _id: community._id,
+                name: community.name,
+                description: community.description,
+                type: community.type,
+                img_url: community.img_url,
+                created_at: community.createdAt,
+                isMember: userCommunityIds.has(community._id.toString()),
+            }));
+        } else {
+            const userCommunities = await Promise.all(
+                memberships.map(async (membership: any) => {
+                    const community = await communitiesModel.findById(membership.communityId);
+                    if (!community) return null;
 
-        return res.json({ communities: filtered });
+                    return {
+                        _id: community._id,
+                        name: community.name,
+                        description: community.description,
+                        type: community.type,
+                        img_url: community.img_url,
+                        created_at: community.createdAt,
+                        isMember: true,
+                        role: membership.role,
+                        joinedAt: membership.joinedAt,
+                    };
+                })
+            );
 
+            communities = userCommunities.filter(c => c !== null);
+        }
+
+        return res.status(200).json({
+            success: true,
+            communities,
+        });
     } catch (err: any) {
         if (err.status === 401) {
             return res.status(401).json({ error: 'Unauthorized' });
@@ -60,81 +77,113 @@ router.get('/communities', async (req: Request, res: Response) => {
     }
 });
 
+
+// Criar uma comunidade;
 router.post('/communities', async (req: Request, res: Response) => {
     try {
-        await validatedToken(req.headers.authorization);
+        const { name, description, type, img_url } = req.body;
+        const user = await validatedToken(req.headers.authorization);
         const db = await MongoSingleton.getInstance();
 
-        return res.status(201).json({ message: 'Community created successfully' });
+        let avatarPath = '';
+        if (img_url && img_url.startsWith('data:image')) {
+            const base64Data = img_url.split(',')[1];
+
+            const fileExtension = img_url.substring("data:image/".length, img_url.indexOf(";base64"));
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExtension}`;
+            const filePath = path.join('uploads', fileName);
+
+            fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+            avatarPath = `/uploads/${fileName}`;
+        }
+
+        await new Community(db).create({
+            name,
+            description,
+            type,
+            created_by: user._id as string,
+            img_url: avatarPath,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: 'Community created successfully',
+        });
     } catch (err) {
         return res.status(500).json({ error: 'Internal error!' });
     }
 });
 
-
-
-router.get('/communities/:id', async (req: Request, res: Response) => {
+// Entrar em uma comunidade;
+router.get('/communities/:id/join', async (req: Request, res: Response) => {
     try {
-        await validatedToken(req.headers.authorization);
+        const user = await validatedToken(req.headers.authorization);
         const db = await MongoSingleton.getInstance();
 
-        return res.json({});
-    } catch (err) {
+        const communitiesModel = new Community(db);
+        const communityMembersModel = new CommunityMember(db);
+
+        const communityId = req.params.id;
+
+        const community = await communitiesModel.findById(communityId);
+        if (!community) {
+            return res.status(404).json({ error: 'Community not found' });
+        }
+
+        await communityMembersModel.create({
+            communityId, // @ts-ignore
+            userId: user._id,
+            role: 'member',
+            joinedAt: new Date(),
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Successfully joined the community',
+        });
+
+    } catch (err: any) {
+        console.error(err);
+        if (err.status === 401) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
         return res.status(500).json({ error: 'Internal error!' });
     }
 });
 
-router.patch('/communities/:id', async (req: Request, res: Response) => {
+
+// Sair de uma comunidade;
+router.get('/communities/:id/leave', async (req: Request, res: Response) => {
     try {
-        await validatedToken(req.headers.authorization);
+        const user = await validatedToken(req.headers.authorization);
         const db = await MongoSingleton.getInstance();
 
-        return res.json({ message: 'Community updated successfully' });
-    } catch (err) {
-        return res.status(500).json({ error: 'Internal error!' });
-    }
-});
+        const communityMembersModel = new CommunityMember(db);
 
-router.delete('/communities/:id', async (req: Request, res: Response) => {
-    try {
-        await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
+        const communityId = req.params.id;
 
-        return res.json({ message: 'Community deleted successfully' });
-    } catch (err) {
-        return res.status(500).json({ error: 'Internal error!' });
-    }
-});
+        const memberships = await communityMembersModel.findByUser(user._id as string);
+        const membership = memberships.find((m: any) => m.communityId.toString() === communityId);
 
-router.post('/communities/:id/join', async (req: Request, res: Response) => {
-    try {
-        await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
+        if (!membership) {
+            return res.status(404).json({ error: 'Membership not found' });
+        }
 
-        return res.json({ message: 'Joined community successfully' });
-    } catch (err) {
-        return res.status(500).json({ error: 'Internal error!' });
-    }
-});
+        // @ts-ignore
+        await communityMembersModel.removeMember(membership._id);
 
-router.post('/communities/:id/leave', async (req: Request, res: Response) => {
-    try {
-        await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
+        return res.status(200).json({
+            success: true,
+            message: 'Saiu com sucesso da comunidade!',
+        });
 
-        return res.json({ message: 'Left community successfully' });
-    } catch (err) {
-        return res.status(500).json({ error: 'Internal error!' });
-    }
-});
-
-router.get('/communities/:id/members', async (req: Request, res: Response) => {
-    try {
-        await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
-
-        return res.json({ members: [] });
-    } catch (err) {
+    } catch (err: any) {
+        console.error(err);
+        if (err.status === 401) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
         return res.status(500).json({ error: 'Internal error!' });
     }
 });

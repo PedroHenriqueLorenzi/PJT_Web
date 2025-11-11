@@ -142,7 +142,7 @@ export default {
                 formData.append("description", this.description);
                 if (this.imageFile) formData.append("image", this.imageFile);
 
-                const { data } = await axios.post(
+                const response = await axios.post(
                     `/api/communities/${this.selectedCommunityId}/posts`,
                     formData,
                     { headers: { "Content-Type": "multipart/form-data" } }
@@ -160,19 +160,28 @@ export default {
                 this.isSubmitting = false;
             }
         },
+
+        async loadData() {
+            try {
+                const response = await axios.get("/api/communities", {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
+                if (response.data.success) {
+                    this.communities = response.data.communities;
+                }
+            } catch (err) {
+                handleApiError(err);
+            } finally {
+                this.loading = false;
+            }
+        }
     },
 
-    async mounted() {
-        try {
-            const { data } = await axios.get("/api/communities", {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            });
-            this.communities = data;
-        } catch (err) {
-            handleApiError(err);
-        } finally {
-            this.loading = false;
-        }
+    mounted() {
+        this.loadData();
     },
 };
 </script>

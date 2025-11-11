@@ -1,8 +1,10 @@
 // src/interfaces/CommunityMemberInterface.ts
+import {ObjectId} from "mongodb";
+
 export type CommunityRole = 'member' | 'moderator' | 'admin';
 
 export interface CommunityMemberInterface {
-    _id?: string;
+    _id?: string | ObjectId;
     communityId: string;
     userId: string;
     role: CommunityRole;

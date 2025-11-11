@@ -15,8 +15,9 @@ export class Community {
                 projection: {
                     name: 1,
                     description: 1,
+                    type: 1,
                     created_by: 1,
-                    image_url: 1,
+                    img_url: 1,
                     createdAt: 1,
                     updatedAt: 1,
                 }

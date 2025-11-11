@@ -29,6 +29,29 @@ router.get('/users/me', async (req: Request, res: Response) => {
     }
 });
 
+router.delete('/users/me', async (req: Request, res: Response) => {
+    try {
+        // const userId = (await validatedToken(req.headers.authorization))._id!.toString();
+        // const db = await MongoSingleton.getInstance();
+        // const userModel = new User(db);
+        //
+        // const user = await userModel.findById(userId);
+        // if (!user) {
+        //     return res.status(404).json({ error: 'User not found' });
+        // }
+        //
+        // await userModel.deleteById(userId);
+        //
+        // return res.json({ message: 'User deleted successfully' });
+    } catch (err: any) {
+        if (err.status === 401) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        console.error(err);
+        return res.status(500).json({ error: 'Internal error!' });
+    }
+});
+
 router.get('/users', async (req: Request, res: Response) => {
     try {
         // await validatedToken(req.headers.authorization);
