@@ -29,6 +29,9 @@ export default defineConfig(({ mode }) => {
         server: {
             port: 5000,
             host: true,
+            allowedHosts: [
+                'jacarezinho.t.r.dreissig.vms.ufsc.br'
+            ],
             proxy: {
                 '/api': {
                     target: env.VITE_API,
