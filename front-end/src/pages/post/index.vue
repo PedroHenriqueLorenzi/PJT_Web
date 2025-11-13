@@ -8,7 +8,7 @@
 
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Comunidade
+                    Comunidade {{selectedCommunityId}}
                 </label>
                 <select
                     v-model="selectedCommunityId"
@@ -17,8 +17,8 @@
                     <option disabled value="">Selecione uma comunidade</option>
                     <option
                         v-for="community in communities"
-                        :key="community.id"
-                        :value="community.id"
+                        :key="community._id"
+                        :value="community._id"
                     >
                         {{ community.name }}
                     </option>
@@ -29,27 +29,32 @@
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     Imagem de capa
                 </label>
-                <div
-                    class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-green-600 transition"
-                    @click="$refs.fileInput.click()"
-                >
-                    <input
-                        type="file"
-                        accept="image/*"
-                        ref="fileInput"
-                        class="hidden"
-                        @change="handleImageUpload"
+
+                <div class="relative group w-full h-48 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 bg-gray-50">
+                    <img
+                        v-if="imageFile"
+                        :src="imageFile"
+                        alt="Prévia da imagem"
+                        class="w-full h-full object-cover"
                     />
-                    <div v-if="imagePreview">
-                        <img
-                            :src="imagePreview"
-                            alt="Preview"
-                            class="mx-auto rounded-lg max-h-64 object-cover shadow-md"
-                        />
+
+                    <div
+                        v-else
+                        class="w-full h-full flex items-center justify-center text-gray-400 text-sm"
+                    >
+                        Nenhuma imagem
                     </div>
-                    <div v-else class="text-gray-400">
-                        <span class="text-sm">Clique para selecionar uma imagem</span>
-                    </div>
+
+                    <label
+                        class="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 7l6 6m0 0l6-6m-6 6V3m6 18H6a2 2 0 01-2-2v-5m16 7V6a2 2 0 00-2-2h-5" />
+                        </svg>
+                        Alterar imagem
+                        <input type="file" @change="handleFileUpload" accept="image/*" class="hidden" />
+                    </label>
                 </div>
             </div>
 
@@ -103,16 +108,17 @@ import { useToast } from "vue-toastification";
 import { handleApiError } from "@/helpers/functions";
 import Spinner from "@/components/Spinner.vue";
 import Layout from "@/components/layout.vue";
+import Input from "@/components/Input.vue";
 
 export default {
     name: "CreatePost",
-    components: { Layout, Spinner },
+    components: {Input, Layout, Spinner },
 
     data() {
         return {
             title: "",
             description: "",
-            imageFile: null as File | null,
+            imageFile: "",
             imagePreview: null as string | null,
             selectedCommunityId: "",
             isSubmitting: false,
@@ -122,12 +128,23 @@ export default {
     },
 
     methods: {
-        handleImageUpload(event: Event) {
+        handleFileUpload(event: Event) {
             const file = (event.target as HTMLInputElement).files?.[0];
-            if (file) {
-                this.imageFile = file;
-                this.imagePreview = URL.createObjectURL(file);
+            if (!file) return;
+
+            if (!file.type.startsWith("image/")) {
+                return;
             }
+
+            if (file.size > 5 * 1024 * 1024) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.imageFile = e.target?.result as string;
+            };
+            reader.readAsDataURL(file);
         },
 
         async createPost() {
@@ -137,23 +154,27 @@ export default {
 
             this.isSubmitting = true;
             try {
-                const formData = new FormData();
-                formData.append("title", this.title);
-                formData.append("description", this.description);
-                if (this.imageFile) formData.append("image", this.imageFile);
+                const payload = {
+                    title: this.title,
+                    description: this.description,
+                    image: this.imageFile,
+                };
 
-                const response = await axios.post(
-                    `/api/communities/${this.selectedCommunityId}/posts`,
-                    formData,
-                    { headers: { "Content-Type": "multipart/form-data" } }
-                );
+                const response = await axios.post(`/api/communities/${this.selectedCommunityId}/posts`, payload, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
 
-                toast.success("Post criado com sucesso!");
-                this.title = "";
-                this.description = "";
-                this.imageFile = null;
-                this.imagePreview = null;
-                this.selectedCommunityId = "";
+                if (response.data.success) {
+                    toast.success("Post criado com sucesso!");
+                    this.title = "";
+                    this.description = "";
+                    this.imageFile = null;
+                    this.imagePreview = null;
+                    this.selectedCommunityId = "";
+                }
+
             } catch (err) {
                 handleApiError(err);
             } finally {

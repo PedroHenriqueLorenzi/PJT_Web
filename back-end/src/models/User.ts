@@ -31,6 +31,12 @@ export class User {
         return this.collection().findOne({ _id: new ObjectId(id) });
     }
 
+    async findByIds(userIds: string[]) {
+        return this.collection()
+            .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
+            .toArray();
+    }
+
     async create(user: UserInterface): Promise<UserInterface> {
         const result = await this.collection().insertOne(user);
         return { _id: result.insertedId.toString(), ...user };

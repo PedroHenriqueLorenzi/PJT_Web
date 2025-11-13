@@ -21,7 +21,10 @@ async function main() {
 
     app
         .use(cors({
-            origin: 'http://localhost:5000',
+            origin: [
+                'http://localhost:5000',
+                'http://jacarezinho.t.r.dreissig.vms.ufsc.br',
+            ],
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
             allowedHeaders: ['Content-Type', 'Authorization'],
         }))

@@ -10,10 +10,7 @@ const router = Router();
 
 router.get('/users/me', async (req: Request, res: Response) => {
     try {
-        const user = await new User(await MongoSingleton.getInstance()).findById(
-            (await validatedToken(req.headers.authorization))._id!.toString()
-        );
-
+        const user = await validatedToken(req.headers.authorization);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -31,18 +28,7 @@ router.get('/users/me', async (req: Request, res: Response) => {
 
 router.delete('/users/me', async (req: Request, res: Response) => {
     try {
-        // const userId = (await validatedToken(req.headers.authorization))._id!.toString();
-        // const db = await MongoSingleton.getInstance();
-        // const userModel = new User(db);
-        //
-        // const user = await userModel.findById(userId);
-        // if (!user) {
-        //     return res.status(404).json({ error: 'User not found' });
-        // }
-        //
-        // await userModel.deleteById(userId);
-        //
-        // return res.json({ message: 'User deleted successfully' });
+
     } catch (err: any) {
         if (err.status === 401) {
             return res.status(401).json({ error: 'Unauthorized' });
@@ -54,63 +40,43 @@ router.delete('/users/me', async (req: Request, res: Response) => {
 
 router.get('/users', async (req: Request, res: Response) => {
     try {
-        // await validatedToken(req.headers.authorization);
-        //
-        // const db = await MongoSingleton.getInstance();
-        // const userModel = new User(db);
-        //
-        // const users = await userModel.findAll();
-        //
-        // const usersData = users.map(({ passwordH, notification, ...userData }) => userData);
-        //
-        // return res.json(usersData);
+        const db = await MongoSingleton.getInstance();
+        const userModel = new User(db);
+
+        const users = await userModel.findAll();
+
+        return res.json(users);
     } catch (err) {
         return res.status(500).json({ error: 'Internal error!' });
     }
 });
 
-// router.patch('/users/me', async (req: Request, res: Response) => {
-//     try {
-//         const userId = await validatedToken(req.headers.authorization);
-//         const { name, username, email, password, age, notification, avatar_url } = req.body;
-//         const db = await MongoSingleton.getInstance();
-//
-//     } catch (err) {
-//         return res.status(500).json({ error: 'Internal error!' });
-//     }
-// });
-//
-// router.get('/users/:id', async (req: Request, res: Response) => {
-//     try {
-//         await validatedToken(req.headers.authorization);
-//         const { id } = req.params;
-//
-//         const db = await MongoSingleton.getInstance();
-//         const userModel = new User(db);
-//
-//         const user = await userModel.findById(id);
-//         if (!user) {
-//             return res.status(404).json({ error: 'User not found' });
-//         }
-//
-//         const { passwordH, notification, ...userData } = user;
-//
-//         return res.json(userData);
-//
-//     } catch (err) {
-//         return res.status(500).json({ error: 'Internal error!' });
-//     }
-// });
-//
-// router.delete('/users/me', async (req: Request, res: Response) => {
-//     try {
-//         const userId = await validatedToken(req.headers.authorization);
-//         const db = await MongoSingleton.getInstance();
-//
-//
-//     } catch (err) {
-//         return res.status(500).json({ error: 'Internal error!' });
-//     }
-// });
+// fixme - falta aqui. (revisar)
+router.patch('/users/me', async (req: Request, res: Response) => {
+    try {
+        const user = await validatedToken(req.headers.authorization);
+        const db = await MongoSingleton.getInstance();
+        const userModel = new User(db);
+
+
+        const { username, email, password } = req.body;
+
+        if (username) user.username = username;
+        if (email) user.email = email;
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            user.passwordH = await bcrypt.hash(password, salt);
+        }
+
+        await userModel.update(user._id!.toString(), user);
+
+        const { passwordH, notification, ...updatedUserData } = user;
+
+        return res.json(updatedUserData);
+
+    } catch (err) {
+        return res.status(500).json({ error: 'Internal error!' });
+    }
+});
 
 export default router;

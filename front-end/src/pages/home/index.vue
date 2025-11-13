@@ -3,7 +3,6 @@
         <div class="max-w-2xl mx-auto mt-8 space-y-6">
             <h2 class="text-2xl font-bold mb-4">Feed</h2>
 
-            <!-- Loop de posts -->
             <div
                 v-for="post in posts"
                 :key="post.id"
@@ -11,18 +10,18 @@
             >
                 <div class="flex items-center p-4">
                     <img
-                        :src="post.userAvatar"
+                        :src="`http://localhost:3000${post.userAvatar}`"
                         alt="User avatar"
                         class="w-10 h-10 rounded-full mr-3"
                     />
                     <div>
-                        <p class="font-semibold">{{ post.userName }}</p>
-                        <p class="text-gray-500 text-sm">{{ formatDate(post.date) }}</p>
+                        <p class="font-semibold">{{ post.username }}</p>
+                        <p class="text-gray-500 text-sm">{{ formatDate(post.createdAt) }}</p>
                     </div>
                 </div>
 
                 <div class="w-full">
-                    <img :src="post.image" alt="Post image" class="w-full max-h-[500px] object-cover" />
+                    <img :src="`http://localhost:3000${post.img_url}`" alt="Post image" class="w-full max-h-[500px] object-contain" />
                 </div>
 
                 <div class="px-4 py-2 flex items-center space-x-4">
@@ -41,8 +40,8 @@
                 </div>
 
                 <div class="px-4 text-gray-800 mb-2">
-                    <span class="font-semibold mr-1">{{ post.userName }}</span>
-                    {{ post.caption }}
+                    <span class="font-semibold mr-1">{{ post.username }}</span>
+                    {{ post.description }}
                 </div>
 
                 <div class="px-4 mb-2 space-y-1">
@@ -78,6 +77,8 @@
 
 <script>
 import Layout from "../../components/layout.vue";
+import axios from "axios";
+import {handleApiError} from "@/helpers/functions.js";
 
 export default {
     name: "Home",
@@ -86,35 +87,36 @@ export default {
         return {
             userName: "Thalles Dreissig",
             userAvatar: 'https://i.pravatar.cc/150?img=3',
-            posts: [
-                {
-                    id: 1,
-                    userName: "Thalles Dreissig",
-                    userAvatar: "https://i.pravatar.cc/150?img=3",
-                    image: "https://picsum.photos/600/400?random=1",
-                    caption: "Primeiro post! 🚀",
-                    date: new Date(),
-                    likes: 12,
-                    liked: false,
-                    comments: [
-                        { user: "Ana", text: "Ficou massa!" },
-                        { user: "João", text: "👏👏" },
-                    ],
-                    newComment: "",
-                },
-                {
-                    id: 2,
-                    userName: "Maria Clara",
-                    userAvatar: "https://i.pravatar.cc/150?img=6",
-                    image: "https://picsum.photos/600/400?random=2",
-                    caption: "Curtindo o dia 😎",
-                    date: new Date(),
-                    likes: 7,
-                    liked: false,
-                    comments: [],
-                    newComment: "",
-                },
-            ],
+            posts: null,
+            // posts: [
+            //     {
+            //         id: 1,
+            //         userName: "Thalles Dreissig",
+            //         userAvatar: "https://i.pravatar.cc/150?img=3",
+            //         image: "https://picsum.photos/600/400?random=1",
+            //         caption: "Primeiro post! 🚀",
+            //         date: new Date(),
+            //         likes: 12,
+            //         liked: false,
+            //         comments: [
+            //             { user: "Ana", text: "Ficou massa!" },
+            //             { user: "João", text: "👏👏" },
+            //         ],
+            //         newComment: "",
+            //     },
+            //     {
+            //         id: 2,
+            //         userName: "Maria Clara",
+            //         userAvatar: "https://i.pravatar.cc/150?img=6",
+            //         image: "https://picsum.photos/600/400?random=2",
+            //         caption: "Curtindo o dia 😎",
+            //         date: new Date(),
+            //         likes: 7,
+            //         liked: false,
+            //         comments: [],
+            //         newComment: "",
+            //     },
+            // ],
         };
     },
     methods: {
@@ -138,18 +140,30 @@ export default {
             });
             post.newComment = "";
         },
+
+        async loadData() {
+            try {
+                const response = await axios.get("/api/posts", {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
+                if (response.data.success) {
+                    this.posts = response.data.posts;
+                    console.log(response.data.posts);
+                }
+            } catch (err) {
+                handleApiError(err);
+            } finally {
+                this.loading = false;
+            }
+        }
     },
 
-    // mounted() {
-    //     const storedUser = localStorage.getItem('user');
-    //     if (storedUser) {
-    //         const user = JSON.parse(storedUser);
-    //         this.userName = user.name;
-    //         this.userAvatar = user.avatar_url
-    //             ? `http://localhost:3000${user.avatar_url}`
-    //             : 'https://i.pravatar.cc/150?img=1';
-    //     }
-    // }
+    mounted() {
+        this.loadData()
+    }
 };
 </script>
 

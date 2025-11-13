@@ -187,7 +187,7 @@ export default {
                     avatar_url: avatarBase64,
                 };
 
-                const response = await axios.put("/api/user/update", payload);
+                const response = await axios.patch("/api/user/update", payload);
                 if (response.data.success) {
                     useToast().success("Informações atualizadas com sucesso!");
                 }

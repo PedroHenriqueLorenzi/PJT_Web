@@ -27,4 +27,11 @@ export class CommunityMember {
             .find({ userId })
             .toArray();
     }
+
+    async findMembership(userId: string, communityId: string): Promise<CommunityMemberInterface | null> {
+        return this.collection().findOne({
+            userId: userId,
+            communityId: communityId,
+        });
+    }
 }
