@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
         ],
         server: {
             port: 5000,
+            host: true,
             proxy: {
                 '/api': {
                     target: env.VITE_API,
