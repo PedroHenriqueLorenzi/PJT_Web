@@ -57,7 +57,7 @@
                     <div class="relative group">
                         <img
                             v-if="previewAvatar"
-                            :src="`http://localhost:3000${previewAvatar}`"
+                            :src="`${API}${previewAvatar}`"
                             class="w-32 h-32 rounded-full object-cover shadow-md border-2 border-green-600"
                         />
                         <div
@@ -118,6 +118,7 @@ export default {
     components: { Input, Layout },
     data() {
         return {
+            API: import.meta.env.VITE_API,
             name: "",
             username: "",
             email: "",

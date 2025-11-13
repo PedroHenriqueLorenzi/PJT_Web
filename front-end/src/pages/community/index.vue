@@ -34,7 +34,7 @@
                 >
                     <div class="relative mb-4">
                         <img
-                            :src="`http://localhost:3000${community.img_url}`"
+                            :src="`${API}${community.img_url}`"
                             alt="Comunidade Imagem"
                             class="w-full h-40 object-cover rounded-xl border border-gray-200"
                         />
@@ -100,6 +100,8 @@ export default {
 
     data() {
         return {
+            API: import.meta.env.VITE_API,
+
             loading: false,
             defaultImage: "https://placehold.co/300x200?text=Sem+Imagem&font=montserrat",
 

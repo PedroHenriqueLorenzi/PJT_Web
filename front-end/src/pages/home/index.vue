@@ -10,7 +10,7 @@
             >
                 <div class="flex items-center p-4">
                     <img
-                        :src="`http://localhost:3000${post.userAvatar}`"
+                        :src="`${API}${post.userAvatar}`"
                         alt="User avatar"
                         class="w-10 h-10 rounded-full mr-3"
                     />
@@ -21,7 +21,7 @@
                 </div>
 
                 <div class="w-full">
-                    <img :src="`http://localhost:3000${post.img_url}`" alt="Post image" class="w-full max-h-[500px] object-contain" />
+                    <img :src="`${API}${post.img_url}`" alt="Post image" class="w-full max-h-[500px] object-contain" />
                 </div>
 
                 <div class="px-4 py-2 flex items-center space-x-4">
@@ -85,6 +85,8 @@ export default {
     components: { Layout },
     data() {
         return {
+            API: import.meta.env.VITE_API,
+
             userName: "Thalles Dreissig",
             userAvatar: 'https://i.pravatar.cc/150?img=3',
             posts: null,
