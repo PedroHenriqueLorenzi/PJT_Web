@@ -8,7 +8,6 @@ import communityRouter from './src/routes/communities';
 import notificationRouter from './src/routes/notifications';
 import postRouter from './src/routes/posts';
 import commentRouter from './src/routes/comments';
-import tagRouter from './src/routes/tags';
 import path from "path";
 
 async function main() {
@@ -22,7 +21,10 @@ async function main() {
 
     app
         .use(cors({
-            origin: 'http://localhost:5000',
+            origin: [
+                'http://localhost:5000',
+                'http://jacarezinho.t.r.dreissig.vms.ufsc.br',
+            ],
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
             allowedHeaders: ['Content-Type', 'Authorization'],
         }))
@@ -33,7 +35,6 @@ async function main() {
         .use(notificationRouter)
         .use(postRouter)
         .use(commentRouter)
-        .use(tagRouter)
         .use(communityRouter);
 
     app.listen(Number(process.env.PORT), process.env.ADDRESS, () => {

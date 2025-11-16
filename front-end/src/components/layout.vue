@@ -35,7 +35,7 @@
             <div @click="$router.push('/config')" class="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition">
                 <span class="text-gray-300">{{ store.user.username }}</span>
                 <img
-                    :src="`http://localhost:3000${store.user.avatar_url}`"
+                    :src="`${API}${store.user.avatar_url}`"
                     alt="Usuário"
                     class="w-10 h-10 rounded-full"
                 />
@@ -213,6 +213,8 @@
         name: "Layout",
         data() {
             return {
+                API: import.meta.env.VITE_API,
+
                 loading: true,
                 isMenuOpen: false,
                 store: systemStore(),

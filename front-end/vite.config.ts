@@ -1,37 +1,44 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
-import path from 'path';
+import path from 'path'
 
-export default defineConfig({
-    optimizeDeps: {
-        include: ['vue-moveable'],
-    },
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), '')
+
+    return {
+        optimizeDeps: {
+            include: ['vue-moveable'],
         },
-    },
-    plugins: [
-        vue({
-            template: {
-                transformAssetUrls: {
-                    base: null,
-                    includeAbsolute: false,
+        resolve: {
+            alias: {
+                '@': path.resolve(__dirname, './src'),
+            },
+        },
+        plugins: [
+            vue({
+                template: {
+                    transformAssetUrls: {
+                        base: null,
+                        includeAbsolute: false,
+                    },
+                },
+            }),
+            tailwindcss(),
+        ],
+        server: {
+            port: 5000,
+            host: true,
+            allowedHosts: [
+                'jacarezinho.t.r.dreissig.vms.ufsc.br'
+            ],
+            proxy: {
+                '/api': {
+                    target: env.VITE_API,
+                    changeOrigin: true,
+                    rewrite: path => path.replace(/^\/api/, ''),
                 },
             },
-        }),
-        tailwindcss(),
-    ],
-    server: {
-        port: 5000,
-        proxy: {
-            '/api': {
-                target: 'http://localhost:3000', // backend
-                changeOrigin: true,
-                rewrite: path => path.replace(/^\/api/, '')
-            }
-        }
+        },
     }
-
 })

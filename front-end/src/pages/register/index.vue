@@ -140,7 +140,7 @@
             </p>
 
             <p class="text-center text-xs text-gray-400 mt-8">
-                Feito por Thalles Dreissig © 2025
+                Feito por TPJ © 2025
             </p>
         </div>
     </div>

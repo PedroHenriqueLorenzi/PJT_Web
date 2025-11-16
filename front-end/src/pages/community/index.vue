@@ -10,7 +10,7 @@
                 </div>
 
                 <RouterLink
-                    to="/community/create"
+                    to="/create-community"
                     class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm font-semibold shadow transition"
                 >
                     + Nova Comunidade
@@ -28,15 +28,14 @@
                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
                 <li
-                    v-for="community in communities"
+                    v-for="(community, communityIdx) in communities"
                     :key="community.id"
                     class="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-4 flex flex-col border border-gray-100"
                 >
-                    <!-- Imagem -->
                     <div class="relative mb-4">
                         <img
-                            :src="community.img_url || defaultImage"
-                            alt="Imagem da comunidade"
+                            :src="`${API}${community.img_url}`"
+                            alt="Comunidade Imagem"
                             class="w-full h-40 object-cover rounded-xl border border-gray-200"
                         />
                         <span
@@ -46,7 +45,6 @@
                         </span>
                     </div>
 
-                    <!-- Conteúdo -->
                     <div class="flex-1 flex flex-col justify-between">
                         <div>
                             <h2 class="text-lg font-semibold text-green-800 truncate">
@@ -59,12 +57,24 @@
 
                         <div class="mt-4 flex items-center justify-between text-xs text-gray-500">
                             <span>Criado em {{ formatDate(community.created_at) }}</span>
-                            <button
-                                @click="enterCommunity(community)"
-                                class="text-green-700 font-medium hover:text-green-900 transition"
-                            >
-                                Entrar
-                            </button>
+
+                            <div class="flex gap-2">
+                                <button
+                                    v-if="!community.isMember"
+                                    @click="joinCommunity(communityIdx)"
+                                    class="text-green-700 font-medium hover:text-green-900 transition cursor-pointer"
+                                >
+                                    Entrar
+                                </button>
+
+                                <button
+                                    v-else
+                                    @click="leaveCommunity(communityIdx)"
+                                    class="text-red-600 font-medium hover:text-red-800 transition cursor-pointer"
+                                >
+                                    Sair
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </li>
@@ -76,6 +86,9 @@
 <script lang="ts">
 import Layout from "@/components/layout.vue";
 import { RouterLink } from "vue-router";
+import axios from "axios";
+import {handleApiError} from "@/helpers/functions.ts";
+import { useToast } from "vue-toastification"
 
 export default {
     name: "CommunityList",
@@ -87,55 +100,12 @@ export default {
 
     data() {
         return {
+            API: import.meta.env.VITE_API,
+
             loading: false,
-            defaultImage:
-                "https://placehold.co/300x200?text=Sem+Imagem&font=montserrat",
-            communities: [
-                {
-                    id: 1,
-                    name: "Clube de Programação",
-                    description:
-                        "Comunidade para alunos interessados em desenvolvimento de software, hackathons e maratonas de programação.",
-                    type: "student_club",
-                    created_by: 2,
-                    img_url:
-                        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop",
-                    created_at: "2025-05-14T14:23:00Z",
-                },
-                {
-                    id: 2,
-                    name: "Departamento de Matemática",
-                    description:
-                        "Espaço para compartilhar pesquisas, eventos e materiais sobre matemática aplicada e pura.",
-                    type: "department",
-                    created_by: 1,
-                    img_url:
-                        "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&h=300&fit=crop",
-                    created_at: "2024-11-09T10:45:00Z",
-                },
-                {
-                    id: 3,
-                    name: "Esportes Universitários",
-                    description:
-                        "Organização responsável por torneios, treinos e eventos esportivos dentro do campus.",
-                    type: "sports",
-                    created_by: 5,
-                    img_url:
-                        "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?w=400&h=300&fit=crop",
-                    created_at: "2025-03-02T09:00:00Z",
-                },
-                {
-                    id: 4,
-                    name: "Curso de Engenharia de Software",
-                    description:
-                        "Comunidade oficial do curso, com informações sobre disciplinas, TCCs, projetos e notícias.",
-                    type: "course",
-                    created_by: 3,
-                    img_url:
-                        "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&h=300&fit=crop",
-                    created_at: "2023-08-01T08:00:00Z",
-                },
-            ],
+            defaultImage: "https://placehold.co/300x200?text=Sem+Imagem&font=montserrat",
+
+            communities: [] as Array<any>,
         };
     },
 
@@ -144,9 +114,59 @@ export default {
             return new Date(date).toLocaleDateString("pt-BR");
         },
 
-        enterCommunity(community: any) {
-            alert(`Entrando em: ${community.name}`);
+        async joinCommunity(communityIdx: number) {
+            try {
+                const response = await axios.get(`/api/communities/${this.communities[communityIdx]._id}/join`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
+                if (response.data.success) {
+                    this.communities[communityIdx].isMember = true;
+                    useToast().success(response.data.message);
+                }
+            } catch (err) {
+                console.error("Erro ao entrar na comunidade:", err);
+            }
         },
+
+        async leaveCommunity(communityIdx: number) {
+            try {
+                const response = await axios.get(`/api/communities/${this.communities[communityIdx]._id}/leave`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
+                if (response.data.success) {
+                    this.communities[communityIdx].isMember = false;
+                    useToast().success(response.data.message);
+                }
+            } catch (err) {
+                console.error("Erro ao sair da comunidade:", err);
+            }
+        },
+
+        async loadData() {
+            try {
+                const response = await axios.get("/api/communities?users=all", {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
+                if (response.data.success) {
+                    this.communities = response.data.communities;
+                }
+            } catch (err) {
+                handleApiError(err);
+            }
+        }
+    },
+
+    mounted() {
+        this.loadData();
     },
 };
 </script>

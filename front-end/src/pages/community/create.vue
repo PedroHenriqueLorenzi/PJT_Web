@@ -76,98 +76,97 @@
                     :disabled="loading"
                     @click="createCommunity"
                     :class="[
-                        'px-6 py-3 rounded-lg text-white font-semibold transition duration-300',
+                        'px-6 py-3 rounded-lg text-white font-semibold transition duration-300 cursor-pointer',
                         loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-700 hover:bg-green-800'
                     ]"
                 >
                     {{ loading ? 'Criando...' : 'Criar Comunidade' }}
+                    <Spinner v-if="loading" />
                 </button>
-            </div>
-
-            <div v-if="successMessage" class="text-green-600 mt-4 text-sm font-medium">
-                {{ successMessage }}
-            </div>
-            <div v-if="errorMessage" class="text-red-600 mt-4 text-sm font-medium">
-                {{ errorMessage }}
             </div>
         </div>
     </Layout>
 </template>
 
 <script lang="ts">
-import Layout from "@/components/layout.vue";
-import Input from "@/components/Input.vue";
+    // Aux;
+    import axios from "axios";
+    import {useToast} from "vue-toastification";
 
-export default {
-    name: "CreateCommunity",
-    components: { Layout, Input },
+    // Components;
+    import Layout from "@/components/layout.vue";
+    import Input from "@/components/Input.vue";
+    import Spinner from "@/components/Spinner.vue";
 
-    data() {
-        return {
-            form: {
-                name: "",
-                description: "",
-                type: "",
-                img_url: "",
-            },
-            previewImage: "",
-            loading: false,
-            successMessage: "",
-            errorMessage: "",
-        };
-    },
+    export default {
+        name: "CreateCommunity",
 
-    methods: {
-        handleFileUpload(event: Event) {
-            const file = (event.target as HTMLInputElement).files?.[0];
-            if (!file) return;
-
-            if (!file.type.startsWith("image/")) {
-                this.errorMessage = "Apenas arquivos de imagem são permitidos.";
-                return;
-            }
-
-            if (file.size > 5 * 1024 * 1024) {
-                this.errorMessage = "A imagem deve ter no máximo 5MB.";
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.previewImage = e.target?.result as string;
+        data() {
+            return {
+                form: {
+                    name: "",
+                    description: "",
+                    type: "",
+                    img_url: "",
+                },
+                previewImage: "",
+                loading: false,
             };
-            reader.readAsDataURL(file);
         },
 
-        async createCommunity() {
-            this.errorMessage = "";
-            this.successMessage = "";
+        methods: {
+            handleFileUpload(event: Event) {
+                const file = (event.target as HTMLInputElement).files?.[0];
+                if (!file) return;
 
-            if (!this.form.name || !this.form.description || !this.form.type) {
-                this.errorMessage = "Por favor, preencha todos os campos obrigatórios.";
-                return;
-            }
+                if (!file.type.startsWith("image/")) {
+                    return;
+                }
 
-            this.loading = true;
-            try {
-                const payload = { ...this.form, img_url: this.previewImage };
-                const response = await fetch("/api/communities", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
+                if (file.size > 5 * 1024 * 1024) {
+                    return;
+                }
 
-                if (!response.ok) throw new Error("Erro ao criar comunidade");
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.previewImage = e.target?.result as string;
+                };
+                reader.readAsDataURL(file);
+            },
 
-                this.successMessage = "Comunidade criada com sucesso!";
-                this.form = { name: "", description: "", type: "", img_url: "" };
-                this.previewImage = "";
-            } catch (err: any) {
-                this.errorMessage = err.message || "Erro ao criar comunidade.";
-            } finally {
-                this.loading = false;
-            }
+            async createCommunity() {
+                if (!this.form.name || !this.form.description || !this.form.type) {
+                    return;
+                }
+
+                this.loading = true;
+                try {
+
+                    const payload = { ...this.form, img_url: this.previewImage };
+                    const response = await axios.post("/api/communities", payload, {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
+                    });
+
+                    if (response.data.success) {
+                        useToast().success("Registro criado com sucesso!");
+                        // Reset form;
+                        this.form = { name: "", description: "", type: "", img_url: "" };
+                        this.previewImage = "";
+                    }
+                } catch (err: any) {
+                    console.error("Erro ao criar comunidade:", err);
+                } finally {
+                    this.loading = false;
+                }
+            },
         },
-    },
-};
+
+        components: {
+            Spinner,
+            Layout,
+            Input
+        },
+    };
 </script>

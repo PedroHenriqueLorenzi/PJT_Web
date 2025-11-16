@@ -35,17 +35,16 @@
                 class="w-full p-4 mb-6 bg-red-500 rounded-lg flex items-center justify-center opacity-50 cursor-not-allowed"
                 disabled
             >
-                <img src="@/assets/images/googleIcon.png" alt="Google Icon" class="w-6 h-6 mr-2" />
-                <span class="text-white font-semibold">Continuar com o Google</span>
+                <span class="text-white font-semibold">Continuar com o Moodle</span>
             </button>
 
             <p class="text-center text-gray-600 mt-4">
                 Não possui conta?
-                <router-link :to="{ name: 'register' }" class="text-blue-600 font-semibold">Registrar</router-link>
+                <router-link :to="{ name: 'register' }" class="text-green-700 font-semibold hover:underline">Registrar</router-link>
             </p>
 
             <p class="text-center text-sm text-gray-400 mt-8">
-                Feito por Thalles Dreissig © 2025
+                Feito por TPJ © 2025
             </p>
         </div>
     </div>

@@ -1,54 +1,25 @@
-// src/models/UserModel.ts
+// src/models/CommentModel.ts
 import { Db, ObjectId } from 'mongodb';
-import { UserInterface } from '../interfaces/UserInterface';
+import { CommentInterface } from '../interfaces/CommentInterface';
 
-export class User {
+export class Comment {
     constructor(private db: Db) {}
 
     collection() {
-        return this.db.collection<UserInterface>('users');
+        return this.db.collection<CommentInterface>('comments');
     }
 
-    async findAll(): Promise<Omit<UserInterface, 'passwordH' | 'notification' | '_id'>[]> {
+    async create(data: CommentInterface) {
+        const now = new Date();
+        const commentData = { ...data, createdAt: now, updatedAt: now };
+        const result = await this.collection().insertOne(commentData);
+        return { _id: result.insertedId.toString(), ...commentData };
+    }
+
+    async findByPost(postId: string) {
         return this.collection()
-            .find({}, {
-                projection: {
-                    name: 1,
-                    username: 1,
-                    email: 1,
-                    age: 1,
-                    avatar_url: 1
-                }
-            })
+            .find({ postId: postId })
+            .sort({ createdAt: -1 })
             .toArray();
-    }
-
-    async findByEmail(email: string): Promise<UserInterface | null> {
-        return this.collection().findOne({ email });
-    }
-
-    async findByUsername(username: string): Promise<UserInterface | null> {
-        return this.collection().findOne({ username });
-    }
-
-    async findById(id: string): Promise<UserInterface | null> {
-        return this.collection().findOne({ _id: new ObjectId(id) });
-    }
-
-    async findOne(query: Partial<UserInterface>): Promise<UserInterface | null> {
-        return this.collection().findOne(query);
-    }
-
-    async create(user: UserInterface): Promise<UserInterface> {
-        const result = await this.collection().insertOne(user);
-        return { _id: result.insertedId.toString(), ...user };
-    }
-
-    async update(id: string, data: Partial<UserInterface>): Promise<void> {
-        await this.collection().updateOne({ _id: new ObjectId(id) }, { $set: data });
-    }
-
-    async delete(id: string): Promise<void> {
-        await this.collection().deleteOne({ _id: new ObjectId(id) });
     }
 }

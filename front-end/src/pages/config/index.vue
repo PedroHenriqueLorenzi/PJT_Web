@@ -57,7 +57,7 @@
                     <div class="relative group">
                         <img
                             v-if="previewAvatar"
-                            :src="`http://localhost:3000${previewAvatar}`"
+                            :src="`${API}${previewAvatar}`"
                             class="w-32 h-32 rounded-full object-cover shadow-md border-2 border-green-600"
                         />
                         <div
@@ -79,16 +79,27 @@
                 </div>
             </div>
 
-            <div class="mt-10 flex justify-end">
+            <div class="mt-10 flex justify-end gap-2">
                 <button
                     :disabled="loading"
                     @click="handleUpdate"
                     :class="[
-                        'px-6 py-3 rounded-lg text-white font-semibold transition duration-300',
+                        'px-6 py-3 rounded-lg text-white font-semibold transition duration-300 cursor-pointer',
                         loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-700 hover:bg-green-800'
                     ]"
                 >
                     {{ loading ? 'Salvando...' : 'Salvar alterações' }}
+                </button>
+
+                <button
+                    :disabled="loading"
+                    @click="deleteAccount"
+                    :class="[
+                        'px-6 py-3 rounded-lg text-white font-semibold transition duration-300 cursor-pointer',
+                        loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-700 hover:bg-red-800'
+                    ]"
+                >
+                    {{ 'Excluir conta' }}
                 </button>
             </div>
         </div>
@@ -107,6 +118,7 @@ export default {
     components: { Input, Layout },
     data() {
         return {
+            API: import.meta.env.VITE_API,
             name: "",
             username: "",
             email: "",
@@ -176,7 +188,7 @@ export default {
                     avatar_url: avatarBase64,
                 };
 
-                const response = await axios.put("/api/user/update", payload);
+                const response = await axios.patch("/api/user/update", payload);
                 if (response.data.success) {
                     useToast().success("Informações atualizadas com sucesso!");
                 }
@@ -187,6 +199,34 @@ export default {
                 this.loading = false;
             }
         },
+
+        async deleteAccount() {
+            try {
+                this.loading = true;
+                const confirmed = confirm("Tem certeza que deseja excluir sua conta? Esta ação é irreversível.");
+                if (!confirmed) {
+                    this.loading = false;
+                    return;
+                }
+
+                const response = await axios.delete("/api/user/me", {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
+                if (response.data.success) {
+                    useToast().success("Até nunca mais.");
+                    localStorage.removeItem("token");
+                    this.$router.push("/login");
+                }
+            } catch (err) {
+                console.error(err);
+                useToast().error("Erro ao excluir conta.");
+            } finally {
+                this.loading = false;
+            }
+        }
     },
 
     mounted() {
