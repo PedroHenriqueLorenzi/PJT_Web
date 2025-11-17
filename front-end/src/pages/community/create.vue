@@ -110,6 +110,7 @@
                     img_url: "",
                 },
                 previewImage: "",
+                imageFile: null as File | null,
                 loading: false,
             };
         },
@@ -119,13 +120,10 @@
                 const file = (event.target as HTMLInputElement).files?.[0];
                 if (!file) return;
 
-                if (!file.type.startsWith("image/")) {
-                    return;
-                }
+                if (!file.type.startsWith("image/")) return;
+                if (file.size > 5 * 1024 * 1024) return;
 
-                if (file.size > 5 * 1024 * 1024) {
-                    return;
-                }
+                this.imageFile = file;
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -140,22 +138,33 @@
                 }
 
                 this.loading = true;
-                try {
 
-                    const payload = { ...this.form, img_url: this.previewImage };
-                    const response = await axios.post("/api/communities", payload, {
+                try {
+                    const formData = new FormData();
+                    formData.append("name", this.form.name);
+                    formData.append("description", this.form.description);
+                    formData.append("type", this.form.type);
+
+                    if (this.imageFile) {
+                        formData.append("image", this.imageFile);
+                    }
+
+                    const response = await axios.post("/api/communities", formData, {
                         headers: {
                             Authorization: `Bearer ${localStorage.getItem("token")}`,
+                            "Content-Type": "multipart/form-data",
                         },
                     });
 
                     if (response.data.success) {
                         useToast().success("Registro criado com sucesso!");
-                        // Reset form;
+
                         this.form = { name: "", description: "", type: "", img_url: "" };
                         this.previewImage = "";
+                        this.imageFile = null;
                     }
-                } catch (err: any) {
+
+                } catch (err) {
                     console.error("Erro ao criar comunidade:", err);
                 } finally {
                     this.loading = false;

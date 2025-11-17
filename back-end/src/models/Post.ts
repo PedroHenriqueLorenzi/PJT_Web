@@ -27,6 +27,7 @@ export class Post {
     async findByCommunities(communityIds: string[]): Promise<PostInterface[]> {
         return this.collection()
             .find({communityId: { $in: communityIds }})
+            .sort({ createdAt: -1 })
             .toArray();
     }
 }

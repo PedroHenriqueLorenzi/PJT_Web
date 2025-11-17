@@ -49,26 +49,20 @@
 
                     <!-- Info extra -->
                     <p class="text-gray-500 text-xs mb-4">
-                        Registrado em {{ formatDate(user.created_at) }}
+                        Registrado em {{ formatDate(user.createdAt) }}
                     </p>
 
                     <!-- Ações -->
                     <div class="mt-auto flex items-center justify-between text-sm text-gray-600">
-
-                        <RouterLink
-                            :to="`/users/${user._id}`"
-                            class="text-blue-600 font-medium hover:text-blue-800 transition cursor-pointer"
+                        <button
+                            @click="toggleFollow(user)"
+                            class="px-3 py-1 rounded-lg font-medium transition cursor-pointer"
+                            :class="user.isFollowing
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'"
                         >
-                            Ver perfil
-                        </RouterLink>
-
-                        <RouterLink
-                            :to="`/users/${user._id}/edit`"
-                            class="text-yellow-600 font-medium hover:text-yellow-800 transition cursor-pointer"
-                        >
-                            Editar
-                        </RouterLink>
-
+                            {{ user.isFollowing ? 'Deixar de seguir' : 'Seguir' }}
+                        </button>
                     </div>
                 </li>
             </ul>
@@ -84,7 +78,7 @@ import axios from "axios";
 import { handleApiError } from "@/helpers/functions";
 
 export default {
-    name: "UsersIndex",
+    name: "Users",
 
     components: {
         Layout,
@@ -103,6 +97,21 @@ export default {
     methods: {
         formatDate(date: string) {
             return new Date(date).toLocaleDateString("pt-BR");
+        },
+
+        async toggleFollow(user: any) {
+            try {
+                const res = await axios.get(`/api/users/${user._id}/follow`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
+
+                user.isFollowing = res.data.following;
+
+            } catch (err) {
+                handleApiError(err);
+            }
         },
 
         async loadData() {

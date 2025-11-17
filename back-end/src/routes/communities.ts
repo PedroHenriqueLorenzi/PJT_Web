@@ -2,6 +2,7 @@
 import { Request, Response, Router } from 'express';
 const router = Router();
 import MongoSingleton from '../singleton';
+import { upload } from "../middlewares/upload";
 
 // Functions;
 import {validatedToken} from "@/helpers/functions";
@@ -9,9 +10,6 @@ import {validatedToken} from "@/helpers/functions";
 // Models;
 import {Community} from "@/models/Community";
 import {CommunityMember} from "@/models/CommunityMembers";
-import path from "path";
-import fs from "fs";
-
 
 // Listar todas as comunidades;
 router.get('/communities', async (req: Request, res: Response) => {
@@ -79,30 +77,20 @@ router.get('/communities', async (req: Request, res: Response) => {
 
 
 // Criar uma comunidade;
-router.post('/communities', async (req: Request, res: Response) => {
+router.post('/communities', upload.single("image"), async (req: Request, res: Response) => {
     try {
-        const { name, description, type, img_url } = req.body;
+        const { name, description, type } = req.body;
         const user = await validatedToken(req.headers.authorization);
         const db = await MongoSingleton.getInstance();
 
-        let avatarPath = '';
-        if (img_url && img_url.startsWith('data:image')) {
-            const base64Data = img_url.split(',')[1];
-
-            const fileExtension = img_url.substring("data:image/".length, img_url.indexOf(";base64"));
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExtension}`;
-            const filePath = path.join('uploads', fileName);
-
-            fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
-            avatarPath = `/uploads/${fileName}`;
-        }
+        const img_url = req.file ? `/uploads/${req.file.filename}` : "";
 
         await new Community(db).create({
             name,
             description,
             type,
             created_by: user._id as string,
-            img_url: avatarPath,
+            img_url,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -111,7 +99,9 @@ router.post('/communities', async (req: Request, res: Response) => {
             success: true,
             message: 'Community created successfully',
         });
+
     } catch (err) {
+        console.error(err);
         return res.status(500).json({ error: 'Internal error!' });
     }
 });

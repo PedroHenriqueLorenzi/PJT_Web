@@ -57,7 +57,7 @@
                     <div class="relative group">
                         <img
                             v-if="previewAvatar"
-                            :src="`${API}${previewAvatar}`"
+                            :src="avatarSrc"
                             class="w-32 h-32 rounded-full object-cover shadow-md border-2 border-green-600"
                         />
                         <div
@@ -131,6 +131,22 @@ export default {
         };
     },
 
+    computed: {
+        avatarSrc() {
+            if (!this.previewAvatar) return null;
+            // se for data URL ou já um URL absoluto, use direto
+            if (
+                typeof this.previewAvatar === "string" &&
+                (this.previewAvatar.startsWith("data:") ||
+                    this.previewAvatar.startsWith("http://") ||
+                    this.previewAvatar.startsWith("https://"))
+            ) {
+                return this.previewAvatar;
+            }
+            return `${this.API}${this.previewAvatar}`;
+        },
+    },
+
     methods: {
         async loadUserData() {
             try {
@@ -148,47 +164,48 @@ export default {
                 this.notification = user.notification;
                 this.previewAvatar = user.avatar_url;
 
-                console.log("User data loaded:", this.name);
             } catch (err) {
                 handleApiError(err);
             }
         },
+
         handleFileUpload(event) {
             const file = event.target.files[0];
-            if (file) {
-                this.avatarFile = file;
-                const reader = new FileReader();
-                reader.onload = (e) => (this.previewAvatar = e.target.result);
-                reader.readAsDataURL(file);
-            }
+            if (!file) return;
+
+            this.avatarFile = file;
+
+            const reader = new FileReader();
+            reader.onload = (e) => (this.previewAvatar = e.target.result);
+            reader.readAsDataURL(file);
         },
-        convertFileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        },
+
         async handleUpdate() {
             this.loading = true;
             try {
-                let avatarBase64 = this.previewAvatar;
-                if (this.avatarFile) {
-                    avatarBase64 = await this.convertFileToBase64(this.avatarFile);
+                const formData = new FormData();
+
+                formData.append("name", this.name);
+                formData.append("username", this.username);
+                formData.append("email", this.email);
+                formData.append("age", this.age);
+                formData.append("notification", this.notification);
+
+                if (this.password) {
+                    formData.append("password", this.password);
                 }
 
-                const payload = {
-                    name: this.name,
-                    username: this.username,
-                    email: this.email,
-                    password: this.password || undefined,
-                    age: this.age,
-                    notification: this.notification,
-                    avatar_url: avatarBase64,
-                };
+                if (this.avatarFile) {
+                    formData.append("avatar", this.avatarFile);
+                }
 
-                const response = await axios.patch("/api/user/update", payload);
+                const response = await axios.patch("/api/users/me", formData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
+
                 if (response.data.success) {
                     useToast().success("Informações atualizadas com sucesso!");
                 }
@@ -209,7 +226,7 @@ export default {
                     return;
                 }
 
-                const response = await axios.delete("/api/user/me", {
+                const response = await axios.delete("/api/users/me", {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`
                     }

@@ -11,7 +11,7 @@
 
                 <RouterLink
                     to="/create-community"
-                    class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm font-semibold shadow transition"
+                    class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-100 transition hover:text-green-800 font-medium"
                 >
                     + Nova Comunidade
                 </RouterLink>

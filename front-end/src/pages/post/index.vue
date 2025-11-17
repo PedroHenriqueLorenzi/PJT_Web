@@ -32,8 +32,8 @@
 
                 <div class="relative group w-full h-48 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 bg-gray-50">
                     <img
-                        v-if="imageFile"
-                        :src="imageFile"
+                        v-if="imagePreview"
+                        :src="imagePreview"
                         alt="Prévia da imagem"
                         class="w-full h-full object-cover"
                     />
@@ -87,7 +87,7 @@
                     @click="createPost"
                     :disabled="isSubmitting"
                     :class="[
-                        'px-6 py-3 rounded-lg font-semibold transition',
+                        'px-6 py-3 rounded-lg font-semibold transition cursor-pointer',
                         isSubmitting
                             ? 'bg-gray-400 text-white cursor-not-allowed'
                             : 'bg-green-700 hover:bg-green-800 text-white shadow-md'
@@ -132,39 +132,43 @@ export default {
             const file = (event.target as HTMLInputElement).files?.[0];
             if (!file) return;
 
-            if (!file.type.startsWith("image/")) {
-                return;
-            }
+            this.imageFile = file;
 
-            if (file.size > 5 * 1024 * 1024) {
-                return;
-            }
-
+            // preview opcional
             const reader = new FileReader();
             reader.onload = (e) => {
-                this.imageFile = e.target?.result as string;
+                this.imagePreview = e.target?.result as string;
             };
             reader.readAsDataURL(file);
         },
 
         async createPost() {
             const toast = useToast();
-            if (!this.selectedCommunityId) return toast.error("Selecione uma comunidade.");
-            if (!this.title || !this.description) return toast.error("Preencha o título e a descrição.");
+
+            if (!this.selectedCommunityId)
+                return toast.error("Selecione uma comunidade.");
+            if (!this.title || !this.description)
+                return toast.error("Preencha o título e a descrição.");
 
             this.isSubmitting = true;
-            try {
-                const payload = {
-                    title: this.title,
-                    description: this.description,
-                    image: this.imageFile,
-                };
 
-                const response = await axios.post(`/api/communities/${this.selectedCommunityId}/posts`, payload, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                });
+            try {
+                const form = new FormData();
+                form.append("title", this.title);
+                form.append("description", this.description);
+                if (this.imageFile) {
+                    form.append("image", this.imageFile); // arquivo real, não base64
+                }
+
+                const response = await axios.post(
+                    `/api/communities/${this.selectedCommunityId}/posts`,
+                    form,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
+                    }
+                );
 
                 if (response.data.success) {
                     toast.success("Post criado com sucesso!");
@@ -174,7 +178,6 @@ export default {
                     this.imagePreview = null;
                     this.selectedCommunityId = "";
                 }
-
             } catch (err) {
                 handleApiError(err);
             } finally {

@@ -1,71 +1,133 @@
 <template>
     <Layout>
         <div class="max-w-2xl mx-auto mt-8 space-y-6">
-            <h2 class="text-2xl font-bold mb-4">Feed</h2>
+            <h2 class="text-3xl font-semibold tracking-wide mb-4 text-center text-gray-800">
+                Feed
+            </h2>
 
             <div
+                v-if="posts.length === 0"
+                class="flex flex-col items-center justify-center text-center py-20 text-gray-500"
+            >
+                <p class="text-lg font-medium mb-2">Nada por aqui ainda...</p>
+                <p class="text-sm mb-6">Comece buscando comunidades para ver novos posts!</p>
+
+                <RouterLink
+                    to="/communities"
+                    class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-100 transition hover:text-green-800 font-medium"
+                >
+                    Buscar comunidades
+                </RouterLink>
+            </div>
+
+            <div
+                v-else
                 v-for="post in posts"
                 :key="post.id"
-                class="bg-white rounded-xl shadow-md overflow-hidden border"
+                class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition hover:shadow-md"
             >
-                <div class="flex items-center p-4">
-                    <img
-                        :src="`${API}${post.userAvatar}`"
-                        alt="User avatar"
-                        class="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div>
-                        <p class="font-semibold">{{ post.username }}</p>
-                        <p class="text-gray-500 text-sm">{{ formatDate(post.createdAt) }}</p>
+                <!-- Header -->
+                <div class="flex items-center justify-between p-4">
+                    <!-- Usuário -->
+                    <div class="flex items-center">
+                        <img
+                            :src="`${API}${post.userAvatar}`"
+                            alt="User avatar"
+                            class="w-12 h-12 rounded-full border border-gray-200 mr-3 object-cover"
+                        />
+
+                        <div>
+                            <p class="font-semibold text-gray-800">
+                                {{ post.username }}
+                            </p>
+                            <p class="text-gray-500 text-xs">
+                                {{ formatDate(post.createdAt) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Comunidade -->
+                    <div class="flex gap-1 items-center">
+                        <p class="text-sm font-medium text-gray-700">
+                            {{ post.communityName }}
+                        </p>
+
+                        <img
+                            v-if="post.communityImg"
+                            :src="`${API}${post.communityImg}`"
+                            alt="Community avatar"
+                            class="w-12 h-12 rounded-full border border-gray-200 mr-2 object-cover"
+                        />
                     </div>
                 </div>
 
-                <div class="w-full">
-                    <img :src="`${API}${post.img_url}`" alt="Post image" class="w-full max-h-[500px] object-contain" />
+                <div class="px-4 pb-2">
+                    <h3 class="text-xl font-semibold text-gray-900 leading-tight">
+                        {{ post.title }}
+                    </h3>
                 </div>
 
-                <div class="px-4 py-2 flex items-center space-x-4">
+                <!-- Image -->
+                <div v-if="post.img_url" class="w-full bg-black bg-opacity-5">
+                    <img
+                        :src="`${API}${post.img_url}`"
+                        alt="Post image"
+                        class="w-full max-h-[550px] object-cover"
+                    />
+                </div>
+
+                <!-- Likes -->
+                <div class="px-4 py-3 flex items-center gap-3">
                     <button
                         @click="toggleLike(post)"
                         class="focus:outline-none"
                     >
                         <span
-                            :class="post.liked ? 'text-red-500' : 'text-gray-400'"
-                            class="text-xl"
+                            :class="post.liked ? 'text-red-500 scale-110' : 'text-gray-400'"
+                            class="text-2xl transition"
                         >
                             ❤️
                         </span>
                     </button>
-                    <span class="text-gray-600 text-sm">{{ post.likes }} curtidas</span>
+
+                    <span class="text-gray-700 text-sm font-medium">
+                        {{ post.likes }} curtidas
+                    </span>
                 </div>
 
-                <div class="px-4 text-gray-800 mb-2">
-                    <span class="font-semibold mr-1">{{ post.username }}</span>
-                    {{ post.description }}
+                <!-- Description -->
+                <div class="px-4 text-gray-800 mb-3">
+                    <span class="font-semibold mr-2">{{ post.username }}</span>
+                    <span class="text-gray-700">{{ post.description }}</span>
                 </div>
 
-                <div class="px-4 mb-2 space-y-1">
+                <!-- Comments -->
+                <div class="px-4 mb-3 space-y-1">
                     <p
                         v-for="(comment, index) in post.comments"
                         :key="index"
-                        class="text-sm text-gray-700"
+                        class="text-sm text-gray-700 leading-snug"
                     >
-                        <span class="font-semibold">{{ comment.user }}:</span>
+                        <span class="font-semibold text-gray-900">{{ comment.user }}:</span>
                         {{ comment.text }}
                     </p>
                 </div>
 
-                <div class="px-4 py-2 border-t flex items-center">
+                <!-- Divider -->
+                <div class="border-t border-gray-200"></div>
+
+                <!-- Add Comment -->
+                <div class="px-4 py-3 flex items-center gap-3 bg-gray-50">
                     <input
                         v-model="post.newComment"
                         type="text"
                         placeholder="Adicione um comentário..."
-                        class="flex-1 text-sm px-3 py-2 outline-none"
+                        class="flex-1 text-sm px-3 py-2 rounded-lg border border-gray-300 bg-white shadow-sm focus:ring-2 focus:ring-green-600 focus:outline-none"
                         @keyup.enter="addComment(post)"
                     />
                     <button
                         @click="addComment(post)"
-                        class="text-blue-500 font-semibold text-sm"
+                        class="text-green-700 font-semibold text-sm hover:text-green-900 transition"
                     >
                         Publicar
                     </button>
@@ -79,6 +141,7 @@
 import Layout from "../../components/layout.vue";
 import axios from "axios";
 import {handleApiError} from "@/helpers/functions.js";
+import {systemStore} from "@/stores/index.js";
 
 export default {
     name: "Home",
@@ -87,38 +150,9 @@ export default {
         return {
             API: import.meta.env.VITE_API,
 
-            userName: "Thalles Dreissig",
+            store: systemStore(),
             userAvatar: 'https://i.pravatar.cc/150?img=3',
             posts: null,
-            // posts: [
-            //     {
-            //         id: 1,
-            //         userName: "Thalles Dreissig",
-            //         userAvatar: "https://i.pravatar.cc/150?img=3",
-            //         image: "https://picsum.photos/600/400?random=1",
-            //         caption: "Primeiro post! 🚀",
-            //         date: new Date(),
-            //         likes: 12,
-            //         liked: false,
-            //         comments: [
-            //             { user: "Ana", text: "Ficou massa!" },
-            //             { user: "João", text: "👏👏" },
-            //         ],
-            //         newComment: "",
-            //     },
-            //     {
-            //         id: 2,
-            //         userName: "Maria Clara",
-            //         userAvatar: "https://i.pravatar.cc/150?img=6",
-            //         image: "https://picsum.photos/600/400?random=2",
-            //         caption: "Curtindo o dia 😎",
-            //         date: new Date(),
-            //         likes: 7,
-            //         liked: false,
-            //         comments: [],
-            //         newComment: "",
-            //     },
-            // ],
         };
     },
     methods: {
@@ -130,14 +164,16 @@ export default {
                 minute: "2-digit",
             });
         },
+
         toggleLike(post) {
             post.liked = !post.liked;
             post.likes += post.liked ? 1 : -1;
         },
+
         addComment(post) {
             if (!post.newComment.trim()) return;
             post.comments.push({
-                user: this.userName,
+                user: this.store.user.username,
                 text: post.newComment,
             });
             post.newComment = "";
@@ -168,10 +204,3 @@ export default {
     }
 };
 </script>
-
-<style scoped>
-/* só pra dar um leve destaque ao input */
-input::placeholder {
-    color: #aaa;
-}
-</style>

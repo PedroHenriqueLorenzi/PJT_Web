@@ -6,6 +6,7 @@ import MongoSingleton from '../singleton';
 import {validatedToken} from "@/helpers/functions";
 import path from "path";
 import fs from "fs";
+import { upload } from "../middlewares/upload";
 
 // Models;
 import { Community } from '@/models/Community';
@@ -66,6 +67,7 @@ router.get('/posts', async (req: Request, res: Response) => {
                     updatedAt: post.updatedAt,
                     communityId: post.communityId,
                     communityName: communityMap.get(post.communityId.toString()) || 'Desconhecida',
+                    communityImg: allCommunities.find((c: any) => c._id.toString() === post.communityId.toString())?.img_url || null,
 
                     userId: post.userId,
                     username: author.username || 'Usuário desconhecido',
@@ -117,59 +119,61 @@ router.delete('/posts/:id', async (req: Request, res: Response) => {
     }
 });
 
-router.post('/communities/:id/posts', async (req: Request, res: Response) => {
-    try {
-        const user = await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
+router.post(
+    "/communities/:id/posts",
+    upload.single("image"),
+    async (req: Request, res: Response) => {
+        try {
+            const user = await validatedToken(req.headers.authorization);
+            const db = await MongoSingleton.getInstance();
 
-        const { title, description, image } = req.body;
-        const communityId = req.params.id;
+            const { title, description } = req.body;
+            const communityId = req.params.id;
 
-        let avatarPath = '';
-        if (typeof image === 'string' && image.startsWith('data:image')) {
-            const base64Data = image.split(',')[1];
+            let imgPath = null;
 
-            const fileExtension = image.substring("data:image/".length, image.indexOf(";base64"));
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExtension}`;
-            const filePath = path.join('uploads', fileName);
+            if (req.file) {
+                imgPath = `/uploads/${req.file.filename}`;
+            }
 
-            fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
-            avatarPath = `/uploads/${fileName}`;
+            const communitiesModel = new Community(db);
+            const membersModel = new CommunityMember(db);
+            const postsModel = new Post(db);
+
+            const community = await communitiesModel.findById(communityId);
+            if (!community) {
+                return res.status(404).json({ error: "Comunidade não encontrada." });
+            }
+
+            const isMember = await membersModel.findMembership(
+                user._id as string,
+                communityId
+            );
+            if (!isMember) {
+                return res.status(403).json({ error: "Você precisa ser membro para postar." });
+            }
+
+
+            await postsModel.create({
+                communityId,
+                userId: user._id!,
+                title,
+                description,
+                img_url: imgPath,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: "Post criado com sucesso!",
+            });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Internal error!" });
         }
-
-        const communitiesModel = new Community(db);
-        const membersModel = new CommunityMember(db);
-        const postsModel = new Post(db);
-
-        const community = await communitiesModel.findById(communityId);
-        if (!community) {
-            return res.status(404).json({ error: 'Comunidade não encontrada.' });
-        }
-
-        const isMember = await membersModel.findMembership(user._id as string, communityId);
-        if (!isMember) {
-            return res.status(403).json({ error: 'Você precisa ser membro para postar nesta comunidade.' });
-        }
-
-        const newPost = await postsModel.create({
-            communityId: communityId, // @ts-ignore
-            userId: user._id,
-            title,
-            description,
-            img_url: avatarPath ?? null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        return res.status(201).json({
-            success: true,
-            message: 'Post criado com sucesso!',
-        });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Internal error!' });
     }
-});
+);
 
 router.get('/communities/:id/posts', async (req: Request, res: Response) => {
     try {
