@@ -21,6 +21,7 @@
             </div>
 
             <!-- -------- CAMPOS -------- -->
+
             <!-- Campo email -->
             <input
                 v-model="email"
@@ -49,6 +50,7 @@
                             : 'bg-green-700 hover:bg-green-800 hover:shadow-md'
                 ]"
             >
+                <!-- Texto muda com loading -->
                 {{ loading ? 'Carregando...' : 'Entrar' }}
             </button>
 
@@ -93,17 +95,35 @@ export default {
         return {
             email: "",
             password: "",
-            loading: false,
+            loading: false,  // loading state
         };
     },
 
     methods: {
-        // Login básico
-        async handleLogin() {
-            if (!this.email || !this.password) {
+        /* -------------------------------
+           Valida campos antes de logar
+        --------------------------------*/
+        validateFields() {
+            if (!this.email.trim() || !this.password.trim()) {
                 useToast().error("Preencha todos os campos!");
-                return;
+                return false;
             }
+
+            // Validação simples de email
+            const emailRegex = /\S+@\S+\.\S+/;
+            if (!emailRegex.test(this.email)) {
+                useToast().error("Email inválido.");
+                return false;
+            }
+
+            return true;
+        },
+
+        /* -------------------------------
+           Login do usuário
+        --------------------------------*/
+        async handleLogin() {
+            if (!this.validateFields()) return;
 
             this.loading = true;
 
@@ -115,11 +135,11 @@ export default {
 
                 if (response.data.success) {
                     useToast().success("Login realizado com sucesso!");
+
+                    // Salva dados no localStorage
                     localStorage.setItem("token", response.data.token);
-                    localStorage.setItem(
-                        "user",
-                        JSON.stringify(response.data.user)
-                    );
+                    localStorage.setItem("user", JSON.stringify(response.data.user));
+
                     router.push("/");
                 }
             } catch (err) {

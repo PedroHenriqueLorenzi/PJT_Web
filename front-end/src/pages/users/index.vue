@@ -4,7 +4,7 @@
 
             <!-- ===============================
                  TÍTULO DA PÁGINA
-                 =============================== -->
+            =============================== -->
             <div class="flex items-center justify-between mb-8">
                 <div>
                     <h1 class="text-3xl font-bold text-green-800">Usuários</h1>
@@ -15,8 +15,8 @@
             </div>
 
             <!-- ===============================
-                 ESTADOS (CARREGANDO / VAZIO)
-                 =============================== -->
+                 ESTADOS (LOADING / EMPTY)
+            =============================== -->
             <div v-if="loading" class="text-gray-400">Carregando usuários...</div>
 
             <div v-else-if="users.length === 0" class="text-gray-400">
@@ -24,8 +24,8 @@
             </div>
 
             <!-- ===============================
-                 LISTA DE USUÁRIOS (GRID RESPONSIVA)
-                 =============================== -->
+                 GRID DE USUÁRIOS
+            =============================== -->
             <ul
                 v-else
                 class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -36,9 +36,8 @@
                     class="bg-white rounded-2xl shadow-md hover:shadow-lg transition
                            p-5 flex flex-col border border-gray-100"
                 >
-                    <!-- ===============================
-                         AVATAR + NOME
-                         =============================== -->
+
+                    <!-- AVATAR + NOME -->
                     <div class="flex items-center gap-4 mb-4">
                         <img
                             :src="user.avatar_url ? `${API}${user.avatar_url}` : defaultAvatar"
@@ -56,27 +55,32 @@
                         </div>
                     </div>
 
-                    <!-- ===============================
-                         INFO EXTRA
-                         =============================== -->
+                    <!-- DATA DE REGISTRO -->
                     <p class="text-gray-500 text-xs mb-4">
                         Registrado em {{ formatDate(user.createdAt) }}
                     </p>
 
-                    <!-- ===============================
-                         AÇÃO: SEGUIR / DEIXAR DE SEGUIR
-                         =============================== -->
-                    <div class="mt-auto flex justify-between text-sm text-gray-600">
+                    <!-- SEGUIR / DEIXAR DE SEGUIR -->
+                    <div class="mt-auto">
                         <button
+                            :disabled="user.processing"
                             @click="toggleFollow(user)"
-                            class="px-3 py-2 rounded-lg font-medium transition w-full text-center"
-                            :class="user.isFollowing
+                            class="w-full px-3 py-2 rounded-lg font-medium transition text-center"
+                            :class="[
+                                user.isFollowing
                                     ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'"
+                                    : 'bg-blue-600 text-white hover:bg-blue-700',
+                                user.processing ? 'opacity-60 cursor-not-allowed' : ''
+                            ]"
                         >
-                            {{ user.isFollowing ? 'Deixar de seguir' : 'Seguir' }}
+                            <!-- Loading individual do botão -->
+                            <span v-if="user.processing">Processando...</span>
+                            <span v-else>
+                                {{ user.isFollowing ? 'Deixar de seguir' : 'Seguir' }}
+                            </span>
                         </button>
                     </div>
+
                 </li>
             </ul>
 
@@ -87,6 +91,7 @@
 <script lang="ts">
 import Layout from "@/components/layout.vue";
 import axios from "axios";
+import { useToast } from "vue-toastification";
 import { handleApiError } from "@/helpers/functions";
 
 export default {
@@ -104,13 +109,22 @@ export default {
     },
 
     methods: {
-        /* Formata a data para pt-BR */
+        /* ------------------------------
+           Formata a data no padrão BR
+        ------------------------------ */
         formatDate(date: string) {
             return new Date(date).toLocaleDateString("pt-BR");
         },
 
-        /* Seguir / deixar de seguir */
+        /* ------------------------------
+           Seguir / deixar de seguir
+        ------------------------------ */
         async toggleFollow(user: any) {
+            const toast = useToast();
+
+            // loading individual do botão
+            user.processing = true;
+
             try {
                 const res = await axios.get(`/api/users/${user._id}/follow`, {
                     headers: {
@@ -120,12 +134,20 @@ export default {
 
                 user.isFollowing = res.data.following;
 
+                if (user.isFollowing) toast.success(`Agora você segue ${user.username}`);
+                else toast.info(`Você deixou de seguir ${user.username}`);
+
             } catch (err) {
+                toast.error("Erro ao tentar seguir/desseguir.");
                 handleApiError(err);
+            } finally {
+                user.processing = false;
             }
         },
 
-        /* Busca usuários da API */
+        /* ------------------------------
+           Carrega usuários da API
+        ------------------------------ */
         async loadData() {
             try {
                 const response = await axios.get("/api/users", {
@@ -135,8 +157,13 @@ export default {
                 });
 
                 if (response.data.success) {
-                    this.users = response.data.users;
+                    // adiciona campo de loading por usuário
+                    this.users = response.data.users.map((u: any) => ({
+                        ...u,
+                        processing: false,
+                    }));
                 }
+
             } catch (err) {
                 handleApiError(err);
             } finally {
@@ -152,5 +179,5 @@ export default {
 </script>
 
 <style scoped>
-/* Nenhum estilo adicional necessário */
+/* Nada adicional aqui */
 </style>

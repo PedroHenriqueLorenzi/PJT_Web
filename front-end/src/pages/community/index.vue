@@ -3,10 +3,10 @@
         <!-- Container principal responsivo -->
         <div class="p-4 md:p-6 max-w-5xl mx-auto">
 
-            <!-- Header da página -->
+            <!-- Header -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
 
-                <!-- Título e subtítulo -->
+                <!-- Título + subtítulo -->
                 <div>
                     <h1 class="text-2xl md:text-3xl font-bold text-green-800">Comunidades</h1>
                     <p class="text-gray-500 text-sm mt-1">
@@ -14,7 +14,7 @@
                     </p>
                 </div>
 
-                <!-- Botão criar comunidade -->
+                <!-- Botão criar -->
                 <RouterLink
                     to="/create-community"
                     class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-100 transition hover:text-green-800 font-medium self-start md:self-auto"
@@ -23,34 +23,36 @@
                 </RouterLink>
             </div>
 
-            <!-- Estados de carregamento e vazio -->
-            <div v-if="loading" class="text-gray-400">Carregando comunidades...</div>
-            <div v-else-if="communities.length === 0" class="text-gray-400">
+            <!-- Estado de carregamento -->
+            <div v-if="loading" class="text-gray-400 text-center py-8">
+                Carregando comunidades...
+            </div>
+
+            <!-- Estado vazio -->
+            <div v-else-if="communities.length === 0" class="text-gray-400 text-center py-10">
                 Nenhuma comunidade encontrada.
             </div>
 
-            <!-- Lista de comunidades -->
-            <!-- Grid responsivo: 1 col mobile / 2 col tablet / 3 col desktop -->
+            <!-- Lista -->
             <ul
                 v-else
                 class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-                <!-- Card individual -->
                 <li
-                    v-for="(community, communityIdx) in communities"
-                    :key="community.id"
+                    v-for="(community, i) in communities"
+                    :key="community._id"
                     class="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-4 flex flex-col border border-gray-100"
                 >
 
-                    <!-- Imagem da comunidade -->
+                    <!-- Imagem -->
                     <div class="relative mb-4">
                         <img
-                            :src="`${API}${community.img_url}`"
-                            alt="Comunidade Imagem"
+                            :src="community.img_url ? `${API}${community.img_url}` : defaultImage"
+                            alt="Comunidade"
                             class="w-full h-40 md:h-48 object-cover rounded-xl border border-gray-200"
                         />
 
-                        <!-- Tag do tipo -->
+                        <!-- Tag de tipo -->
                         <span
                             class="absolute top-2 left-2 px-2 py-1 bg-green-600 text-white text-xs rounded-full capitalize"
                         >
@@ -58,46 +60,42 @@
                         </span>
                     </div>
 
-                    <!-- Conteúdo do card -->
+                    <!-- Texto do card -->
                     <div class="flex-1 flex flex-col justify-between">
-
-                        <!-- Título e descrição -->
                         <div>
                             <h2 class="text-lg font-semibold text-green-800 truncate">
                                 {{ community.name }}
                             </h2>
 
-                            <!-- Descrição com limite de 3 linhas -->
                             <p class="text-gray-600 text-sm mt-1 line-clamp-3">
                                 {{ community.description }}
                             </p>
                         </div>
 
-                        <!-- Rodapé do card: data + botões -->
+                        <!-- Rodapé -->
                         <div class="mt-4 flex items-center justify-between text-xs text-gray-500">
-
-                            <!-- Data formatada -->
                             <span>Criado em {{ formatDate(community.created_at) }}</span>
 
-                            <!-- Botões Entrar/Sair -->
+                            <!-- Seguir/Entrar -->
                             <div class="flex gap-2">
                                 <button
                                     v-if="!community.isMember"
-                                    @click="joinCommunity(communityIdx)"
-                                    class="text-green-700 font-medium hover:text-green-900 transition cursor-pointer"
+                                    @click="joinCommunity(i)"
+                                    :disabled="actionLoading"
+                                    class="text-green-700 font-medium hover:text-green-900 transition cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed"
                                 >
-                                    Entrar
+                                    {{ actionLoading ? '...' : 'Entrar' }}
                                 </button>
 
                                 <button
                                     v-else
-                                    @click="leaveCommunity(communityIdx)"
-                                    class="text-red-600 font-medium hover:text-red-800 transition cursor-pointer"
+                                    @click="leaveCommunity(i)"
+                                    :disabled="actionLoading"
+                                    class="text-red-600 font-medium hover:text-red-800 transition cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed"
                                 >
-                                    Sair
+                                    {{ actionLoading ? '...' : 'Sair' }}
                                 </button>
                             </div>
-
                         </div>
                     </div>
                 </li>
@@ -107,93 +105,90 @@
 </template>
 
 <script lang="ts">
-/* Layout principal e RouterLink */
+/* Imports essenciais */
 import Layout from "@/components/layout.vue";
 import { RouterLink } from "vue-router";
 
-/* Axios + Toast */
 import axios from "axios";
-import { handleApiError } from "@/helpers/functions.ts";
+import { handleApiError } from "@/helpers/functions";
 import { useToast } from "vue-toastification";
 
 export default {
     name: "CommunityList",
 
-    components: {
-        Layout,
-        RouterLink,
-    },
+    components: { Layout, RouterLink },
 
     data() {
         return {
             API: import.meta.env.VITE_API,
 
-            /* Controle de carregamento */
-            loading: false,
+            /* Loading geral da página */
+            loading: true,
 
-            /* Caso falte imagem */
+            /* Loading de botões de ação */
+            actionLoading: false,
+
             defaultImage: "https://placehold.co/300x200?text=Sem+Imagem&font=montserrat",
 
-            /* Lista de comunidades */
-            communities: [] as Array<any>,
+            communities: [] as any[],
         };
     },
 
     methods: {
-        /* Formata data para pt-BR */
+        /* Formatador de datas */
         formatDate(date: string) {
             return new Date(date).toLocaleDateString("pt-BR");
         },
 
-        /* Ação: entrar na comunidade */
-        async joinCommunity(communityIdx: number) {
+        /* Entrar na comunidade */
+        async joinCommunity(i: number) {
+            const toast = useToast();
+            this.actionLoading = true;
+
             try {
-                const response = await axios.get(
-                    `/api/communities/${this.communities[communityIdx]._id}/join`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem("token")}`,
-                        },
-                    }
+                const res = await axios.get(
+                    `/api/communities/${this.communities[i]._id}/join`,
+                    { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
                 );
 
-                if (response.data.success) {
-                    this.communities[communityIdx].isMember = true;
-                    useToast().success(response.data.message);
+                if (res.data.success) {
+                    this.communities[i].isMember = true;
+                    toast.success(res.data.message);
                 }
             } catch (err) {
-                console.error("Erro ao entrar na comunidade:", err);
+                toast.error("Erro ao entrar na comunidade.");
+            } finally {
+                this.actionLoading = false;
             }
         },
 
-        /* Ação: sair da comunidade */
-        async leaveCommunity(communityIdx: number) {
+        /* Sair da comunidade */
+        async leaveCommunity(i: number) {
+            const toast = useToast();
+            this.actionLoading = true;
+
             try {
-                const response = await axios.get(
-                    `/api/communities/${this.communities[communityIdx]._id}/leave`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem("token")}`,
-                        },
-                    }
+                const res = await axios.get(
+                    `/api/communities/${this.communities[i]._id}/leave`,
+                    { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
                 );
 
-                if (response.data.success) {
-                    this.communities[communityIdx].isMember = false;
-                    useToast().success(response.data.message);
+                if (res.data.success) {
+                    this.communities[i].isMember = false;
+                    toast.success(res.data.message);
                 }
             } catch (err) {
-                console.error("Erro ao sair da comunidade:", err);
+                toast.error("Erro ao sair da comunidade.");
+            } finally {
+                this.actionLoading = false;
             }
         },
 
-        /* Carrega comunidades da API */
+        /* Carrega lista */
         async loadData() {
             try {
                 const response = await axios.get("/api/communities?users=all", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
+                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
 
                 if (response.data.success) {
@@ -201,11 +196,12 @@ export default {
                 }
             } catch (err) {
                 handleApiError(err);
+            } finally {
+                this.loading = false;
             }
         },
     },
 
-    /* Carrega automaticamente ao abrir a página */
     mounted() {
         this.loadData();
     },

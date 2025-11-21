@@ -14,18 +14,17 @@
             <!-- ------- Seleção da comunidade ------- -->
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    <!-- Nome do campo -->
                     Comunidade
                 </label>
 
                 <select
                     v-model="selectedCommunityId"
+                    :disabled="isSubmitting"
                     class="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 bg-white
-                           focus:ring-2 focus:ring-green-600 focus:outline-none"
+                           focus:ring-2 focus:ring-green-600 focus:outline-none disabled:bg-gray-100"
                 >
                     <option disabled value="">Selecione uma comunidade</option>
 
-                    <!-- Lista dinâmica -->
                     <option
                         v-for="community in communities"
                         :key="community._id"
@@ -36,19 +35,17 @@
                 </select>
             </div>
 
-            <!-- ------- Upload de imagem ------- -->
+            <!-- ------- Upload da imagem ------- -->
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     Imagem de capa
                 </label>
 
-                <!-- Área da imagem responsiva -->
                 <div
                     class="relative group w-full h-40 sm:h-48 rounded-xl overflow-hidden 
-                           border-2 border-gray-200 shadow-sm bg-gray-50
-                           hover:shadow-md transition-all"
+                           border-2 border-gray-200 shadow-sm bg-gray-50 hover:shadow-md transition-all"
                 >
-                    <!-- Prévia da imagem -->
+                    <!-- Prévia -->
                     <img
                         v-if="imagePreview"
                         :src="imagePreview"
@@ -56,7 +53,7 @@
                         class="w-full h-full object-cover"
                     />
 
-                    <!-- Estado sem imagem -->
+                    <!-- Placeholder -->
                     <div
                         v-else
                         class="w-full h-full flex items-center justify-center text-gray-400 text-sm"
@@ -71,25 +68,32 @@
                                group-hover:opacity-100 transition cursor-pointer"
                     >
                         Alterar imagem
-                        <input type="file" @change="handleFileUpload" accept="image/*" class="hidden" />
+                        <input
+                            type="file"
+                            @change="handleFileUpload"
+                            accept="image/*"
+                            class="hidden"
+                            :disabled="isSubmitting"
+                        />
                     </label>
                 </div>
             </div>
 
-            <!-- ------- Campo título ------- -->
+            <!-- ------- Título ------- -->
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Título</label>
 
                 <input
                     v-model="title"
                     type="text"
+                    :disabled="isSubmitting"
                     placeholder="Digite o título do post"
                     class="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 bg-white
-                           focus:ring-2 focus:ring-green-600 focus:outline-none"
+                           focus:ring-2 focus:ring-green-600 focus:outline-none disabled:bg-gray-100"
                 />
             </div>
 
-            <!-- ------- Campo descrição ------- -->
+            <!-- ------- Descrição ------- -->
             <div class="mb-8">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     Descrição
@@ -98,18 +102,19 @@
                 <textarea
                     v-model="description"
                     rows="5"
+                    :disabled="isSubmitting"
                     placeholder="No que está pensando?"
                     class="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 bg-white resize-none
-                           focus:ring-2 focus:ring-green-600 focus:outline-none"
+                           focus:ring-2 focus:ring-green-600 focus:outline-none disabled:bg-gray-100"
                 ></textarea>
             </div>
 
-            <!-- ------- Botão de publicar ------- -->
+            <!-- ------- Botão ------- -->
             <div class="flex justify-end">
                 <button
                     @click="createPost"
                     :disabled="isSubmitting"
-                    :class="[
+                    :class="[ 
                         'px-5 py-3 rounded-lg font-semibold transition',
                         isSubmitting
                             ? 'bg-gray-400 text-white cursor-not-allowed'
@@ -132,17 +137,16 @@ import { useToast } from "vue-toastification";
 import { handleApiError } from "@/helpers/functions";
 import Spinner from "@/components/Spinner.vue";
 import Layout from "@/components/layout.vue";
-import Input from "@/components/Input.vue";
 
 export default {
     name: "CreatePost",
-    components: { Input, Layout, Spinner },
+    components: { Spinner, Layout },
 
     data() {
         return {
             title: "",
             description: "",
-            imageFile: "",
+            imageFile: null as File | null,
             imagePreview: null as string | null,
             selectedCommunityId: "",
             isSubmitting: false,
@@ -152,10 +156,18 @@ export default {
     },
 
     methods: {
-        /* Prévia da imagem */
+        /* -----------------------------
+           Lê imagem e cria preview
+        ----------------------------- */
         handleFileUpload(event: Event) {
             const file = (event.target as HTMLInputElement).files?.[0];
             if (!file) return;
+
+            /* Validação simples */
+            if (!file.type.startsWith("image/")) {
+                useToast().error("Selecione um arquivo de imagem válido.");
+                return;
+            }
 
             this.imageFile = file;
 
@@ -164,22 +176,25 @@ export default {
             reader.readAsDataURL(file);
         },
 
-        /* Criar post */
+        /* -----------------------------
+           Envia o post para a API
+        ----------------------------- */
         async createPost() {
             const toast = useToast();
 
+            /* Validações */
             if (!this.selectedCommunityId)
                 return toast.error("Selecione uma comunidade.");
 
-            if (!this.title || !this.description)
-                return toast.error("Título e descrição obrigatórios.");
+            if (!this.title.trim() || !this.description.trim())
+                return toast.error("Título e descrição são obrigatórios.");
 
             this.isSubmitting = true;
 
             try {
                 const form = new FormData();
-                form.append("title", this.title);
-                form.append("description", this.description);
+                form.append("title", this.title.trim());
+                form.append("description", this.description.trim());
 
                 if (this.imageFile) form.append("image", this.imageFile);
 
@@ -196,10 +211,10 @@ export default {
                 if (response.data.success) {
                     toast.success("Post criado com sucesso!");
 
-                    /* Reset */
+                    /* Reset dos campos */
                     this.title = "";
                     this.description = "";
-                    this.imageFile = "";
+                    this.imageFile = null;
                     this.imagePreview = null;
                     this.selectedCommunityId = "";
                 }
@@ -210,7 +225,9 @@ export default {
             }
         },
 
-        /* Carregar comunidades */
+        /* -----------------------------
+           Carrega comunidades disponíveis
+        ----------------------------- */
         async loadData() {
             try {
                 const response = await axios.get("/api/communities", {

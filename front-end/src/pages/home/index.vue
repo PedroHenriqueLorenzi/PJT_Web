@@ -3,20 +3,24 @@
         <!-- Container geral -->
         <div class="max-w-2xl mx-auto mt-8 px-4 space-y-6">
 
-            <!-- Título do feed -->
+            <!-- Título -->
             <h2 class="text-3xl font-semibold tracking-wide mb-4 text-center text-gray-800">
                 Feed
             </h2>
 
+            <!-- Estado de carregamento -->
+            <div v-if="loading" class="text-center text-gray-500 py-16">
+                Carregando posts...
+            </div>
+
             <!-- Estado: sem posts -->
             <div
-                v-if="posts.length === 0"
+                v-else-if="posts.length === 0"
                 class="flex flex-col items-center justify-center text-center py-16 text-gray-500"
             >
                 <p class="text-lg font-medium mb-2">Nada por aqui ainda...</p>
                 <p class="text-sm mb-6">Comece buscando comunidades para ver novos posts!</p>
 
-                <!-- Botão buscar comunidades -->
                 <RouterLink
                     to="/communities"
                     class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-100 transition hover:text-green-800 font-medium"
@@ -32,14 +36,13 @@
                 :key="post.id"
                 class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition hover:shadow-md"
             >
-                <!-- -------- HEADER -------- -->
+                <!-- HEADER -->
                 <div class="flex items-center justify-between p-4 gap-3 flex-wrap">
                     
-                    <!-- Info do usuário -->
+                    <!-- Usuário -->
                     <div class="flex items-center min-w-[180px]">
                         <img
                             :src="`${API}${post.userAvatar}`"
-                            alt="User avatar"
                             class="w-10 h-10 md:w-12 md:h-12 rounded-full border border-gray-200 mr-3 object-cover"
                         />
 
@@ -53,10 +56,8 @@
                         </div>
                     </div>
 
-                    <!-- Info da comunidade -->
-                    <div
-                        class="flex items-center gap-2 justify-end w-full md:w-auto mt-2 md:mt-0"
-                    >
+                    <!-- Comunidade -->
+                    <div class="flex items-center gap-2 justify-end w-full md:w-auto mt-2 md:mt-0">
                         <p class="text-sm font-medium text-gray-700 truncate max-w-[130px]">
                             {{ post.communityName }}
                         </p>
@@ -64,31 +65,29 @@
                         <img
                             v-if="post.communityImg"
                             :src="`${API}${post.communityImg}`"
-                            alt="Community avatar"
                             class="w-10 h-10 md:w-12 md:h-12 rounded-full border border-gray-200 object-cover"
                         />
                     </div>
                 </div>
 
-                <!-- -------- TÍTULO DO POST -------- -->
+                <!-- TÍTULO -->
                 <div class="px-4 pb-2">
                     <h3 class="text-lg md:text-xl font-semibold text-gray-900 leading-tight">
                         {{ post.title }}
                     </h3>
                 </div>
 
-                <!-- -------- IMAGEM -------- -->
+                <!-- IMAGEM -->
                 <div v-if="post.img_url" class="w-full bg-black bg-opacity-5">
                     <img
                         :src="`${API}${post.img_url}`"
-                        alt="Post image"
                         class="w-full max-h-[450px] md:max-h-[550px] object-cover"
                     />
                 </div>
 
-                <!-- -------- CURTIDAS -------- -->
+                <!-- CURTIDAS -->
                 <div class="px-4 py-3 flex items-center gap-3">
-                    <button @click="toggleLike(post)" class="focus:outline-none">
+                    <button @click="toggleLike(post)" class="focus:outline-none" :disabled="post.liking">
                         <span
                             :class="post.liked ? 'text-red-500 scale-110' : 'text-gray-400'"
                             class="text-xl md:text-2xl transition"
@@ -102,13 +101,13 @@
                     </span>
                 </div>
 
-                <!-- -------- DESCRIÇÃO -------- -->
+                <!-- DESCRIÇÃO -->
                 <div class="px-4 text-gray-800 mb-3">
                     <span class="font-semibold mr-2">{{ post.username }}</span>
                     <span class="text-gray-700 break-words">{{ post.description }}</span>
                 </div>
 
-                <!-- -------- COMENTÁRIOS -------- -->
+                <!-- COMENTÁRIOS -->
                 <div class="px-4 mb-3 space-y-1">
                     <p
                         v-for="(comment, index) in post.comments"
@@ -123,10 +122,10 @@
                 <!-- Divider -->
                 <div class="border-t border-gray-200"></div>
 
-                <!-- -------- ADICIONAR COMENTÁRIO -------- -->
+                <!-- ADICIONAR COMENTÁRIO -->
                 <div class="px-4 py-3 flex flex-col sm:flex-row items-center gap-3 bg-gray-50">
 
-                    <!-- Campo de comentário -->
+                    <!-- Campo -->
                     <input
                         v-model="post.newComment"
                         type="text"
@@ -138,9 +137,10 @@
                     <!-- Botão -->
                     <button
                         @click="addComment(post)"
+                        :disabled="post.commenting"
                         class="text-green-700 font-semibold text-sm hover:text-green-900 transition w-full sm:w-auto"
                     >
-                        Publicar
+                        {{ post.commenting ? "Publicando..." : "Publicar" }}
                     </button>
                 </div>
             </div>
@@ -153,6 +153,7 @@ import Layout from "../../components/layout.vue";
 import axios from "axios";
 import { handleApiError } from "@/helpers/functions.js";
 import { systemStore } from "@/stores/index.js";
+import { useToast } from "vue-toastification";
 
 export default {
     name: "Home",
@@ -164,11 +165,12 @@ export default {
             store: systemStore(),
 
             posts: [],
+            loading: true, // loading inicial do feed
         };
     },
 
     methods: {
-        /* Formata a data do post */
+        /* Formata data */
         formatDate(date) {
             return new Date(date).toLocaleString("pt-BR", {
                 day: "2-digit",
@@ -180,23 +182,44 @@ export default {
 
         /* Like / Unlike */
         toggleLike(post) {
+            if (post.liking) return;
+
+            post.liking = true;
             post.liked = !post.liked;
             post.likes += post.liked ? 1 : -1;
+
+            setTimeout(() => {
+                post.liking = false;
+            }, 300);
         },
 
-        /* Adicionar comentário */
-        addComment(post) {
-            if (!post.newComment?.trim()) return;
+        /* Adiciona comentário */
+        async addComment(post) {
+            const toast = useToast();
 
-            post.comments.push({
-                user: this.store.user.username,
-                text: post.newComment,
-            });
+            if (!post.newComment?.trim()) {
+                toast.error("Digite um comentário.");
+                return;
+            }
 
-            post.newComment = "";
+            post.commenting = true;
+
+            try {
+                post.comments.push({
+                    user: this.store.user.username,
+                    text: post.newComment,
+                });
+
+                post.newComment = "";
+
+            } catch (err) {
+                toast.error("Erro ao comentar.");
+            } finally {
+                post.commenting = false;
+            }
         },
 
-        /* Carrega posts */
+        /* Carrega posts da API */
         async loadData() {
             try {
                 const response = await axios.get("/api/posts", {
@@ -206,10 +229,17 @@ export default {
                 });
 
                 if (response.data.success) {
-                    this.posts = response.data.posts;
+                    this.posts = response.data.posts.map((p) => ({
+                        ...p,
+                        newComment: "",
+                        commenting: false,
+                        liking: false,
+                    }));
                 }
             } catch (err) {
                 handleApiError(err);
+            } finally {
+                this.loading = false;
             }
         }
     },

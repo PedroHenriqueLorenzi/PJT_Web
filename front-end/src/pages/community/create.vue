@@ -14,13 +14,12 @@
             </p>
 
             <!-- Grid responsiva -->
-            <!-- 1 coluna no mobile / 2 colunas no desktop -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                <!-- Lado esquerdo: inputs principais -->
+                <!-- Inputs principais -->
                 <div class="space-y-4">
 
-                    <!-- Input nome da comunidade -->
+                    <!-- Nome -->
                     <Input
                         v-model="form.name"
                         type="text"
@@ -39,7 +38,7 @@
                         ></textarea>
                     </div>
 
-                    <!-- Tipo da comunidade -->
+                    <!-- Tipo -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                         <select
@@ -55,23 +54,20 @@
                     </div>
                 </div>
 
-                <!-- Lado direito: upload de imagem -->
+                <!-- Upload imagem -->
                 <div class="flex flex-col items-center justify-center space-y-4 border-t lg:border-t-0 lg:border-l border-gray-200 pt-6 lg:pt-0 lg:pl-6">
-                    
-                    <!-- Título do upload -->
+
                     <label class="text-gray-700 text-sm font-medium">Imagem da Comunidade</label>
 
-                    <!-- Pré-visualização da imagem -->
                     <div class="relative group">
-
-                        <!-- Imagem escolhida -->
+                        <!-- Preview -->
                         <img
                             v-if="previewImage"
                             :src="previewImage"
                             class="w-32 h-32 md:w-40 md:h-40 rounded-xl object-cover shadow-md border-2 border-green-600"
                         />
 
-                        <!-- Placeholder sem imagem -->
+                        <!-- Placeholder -->
                         <div
                             v-else
                             class="w-32 h-32 md:w-40 md:h-40 rounded-xl flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400 text-sm"
@@ -79,7 +75,7 @@
                             Sem imagem
                         </div>
 
-                        <!-- Botão de alterar imagem -->
+                        <!-- Botão trocar imagem -->
                         <label
                             class="absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition duration-300 cursor-pointer"
                         >
@@ -88,14 +84,13 @@
                         </label>
                     </div>
 
-                    <!-- Texto auxiliar -->
                     <p class="text-xs text-gray-500 text-center w-40">
                         Formatos aceitos: JPG, PNG (máx. 5MB)
                     </p>
                 </div>
             </div>
 
-            <!-- Botão de criar -->
+            <!-- Botão -->
             <div class="mt-10 flex justify-end">
                 <button
                     :disabled="loading"
@@ -105,10 +100,7 @@
                         loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-700 hover:bg-green-800'
                     ]"
                 >
-                    <!-- Texto do botão -->
                     {{ loading ? 'Criando...' : 'Criar Comunidade' }}
-
-                    <!-- Loader -->
                     <Spinner v-if="loading" />
                 </button>
             </div>
@@ -117,11 +109,9 @@
 </template>
 
 <script lang="ts">
-/* Imports principais */
+/* Imports */
 import axios from "axios";
 import { useToast } from "vue-toastification";
-
-/* Componentes usados na página */
 import Layout from "@/components/layout.vue";
 import Input from "@/components/Input.vue";
 import Spinner from "@/components/Spinner.vue";
@@ -131,60 +121,84 @@ export default {
 
     data() {
         return {
-            /* Objeto do formulário */
+            /* Formulário */
             form: {
                 name: "",
                 description: "",
                 type: "",
-                img_url: "",
             },
 
-            /* Pré-visualização da imagem */
+            /* Estado do upload */
             previewImage: "",
             imageFile: null as File | null,
 
-            /* Estado do botão */
+            /* Loading do botão */
             loading: false,
         };
     },
 
     methods: {
-        /* Lê imagem e gera pré-visualização */
+        // ------------------------------------------
+        // Upload da imagem
+        // ------------------------------------------
         handleFileUpload(event: Event) {
             const file = (event.target as HTMLInputElement).files?.[0];
+            const toast = useToast();
+
             if (!file) return;
 
-            if (!file.type.startsWith("image/")) return;
-            if (file.size > 5 * 1024 * 1024) return;
+            /* Validações básicas */
+            if (!file.type.startsWith("image/")) {
+                return toast.error("O arquivo deve ser uma imagem.");
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                return toast.error("A imagem deve ter no máximo 5 MB.");
+            }
 
             this.imageFile = file;
 
             const reader = new FileReader();
-            reader.onload = (e) => {
-                this.previewImage = e.target?.result as string;
-            };
+            reader.onload = (e) => this.previewImage = e.target?.result as string;
             reader.readAsDataURL(file);
         },
 
-        /* Envia o formulário para o backend */
+        // ------------------------------------------
+        // Criar comunidade
+        // ------------------------------------------
         async createCommunity() {
-            if (!this.form.name || !this.form.description || !this.form.type) {
-                return;
-            }
+            const toast = useToast();
+
+            /* Validações */
+            if (!this.form.name.trim())
+                return toast.error("O nome da comunidade é obrigatório.");
+
+            if (this.form.name.length < 3)
+                return toast.error("O nome deve ter pelo menos 3 caracteres.");
+
+            if (!this.form.description.trim())
+                return toast.error("A descrição é obrigatória.");
+
+            if (this.form.description.length < 10)
+                return toast.error("A descrição deve ter pelo menos 10 caracteres.");
+
+            if (!this.form.type)
+                return toast.error("Selecione um tipo de comunidade.");
 
             this.loading = true;
 
             try {
-                const formData = new FormData();
-                formData.append("name", this.form.name);
-                formData.append("description", this.form.description);
-                formData.append("type", this.form.type);
+                const data = new FormData();
+
+                data.append("name", this.form.name);
+                data.append("description", this.form.description);
+                data.append("type", this.form.type);
 
                 if (this.imageFile) {
-                    formData.append("image", this.imageFile);
+                    data.append("image", this.imageFile);
                 }
 
-                const response = await axios.post("/api/communities", formData, {
+                const response = await axios.post("/api/communities", data, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                         "Content-Type": "multipart/form-data",
@@ -192,26 +206,22 @@ export default {
                 });
 
                 if (response.data.success) {
-                    useToast().success("Registro criado com sucesso!");
+                    toast.success("Comunidade criada com sucesso!");
 
-                    /* Reseta formulário */
-                    this.form = { name: "", description: "", type: "", img_url: "" };
+                    /* Reset */
+                    this.form = { name: "", description: "", type: "" };
                     this.previewImage = "";
                     this.imageFile = null;
                 }
-
             } catch (err) {
-                console.error("Erro ao criar comunidade:", err);
+                console.error(err);
+                toast.error("Erro ao criar comunidade.");
             } finally {
                 this.loading = false;
             }
         },
     },
 
-    components: {
-        Spinner,
-        Layout,
-        Input,
-    },
+    components: { Layout, Input, Spinner },
 };
 </script>

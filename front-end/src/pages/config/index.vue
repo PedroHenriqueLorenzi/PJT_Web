@@ -3,20 +3,22 @@
         <!-- Container principal responsivo -->
         <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-6 md:p-8 mt-10">
 
-            <!-- Título -->
+            <!-- Título principal -->
             <h1 class="text-2xl md:text-3xl font-bold text-green-800 mb-2">
                 Configurações da Conta
             </h1>
 
+            <!-- Subtítulo -->
             <p class="text-gray-500 mb-6 md:mb-8 text-sm">
                 Atualize suas informações pessoais e preferências abaixo.
             </p>
 
-            <!-- Grid responsivo: 1 coluna no mobile / 2 no desktop -->
+            <!-- Grid: 1 coluna mobile / 2 desktop -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                <!-- Coluna esquerda: Inputs -->
+                <!-- Coluna esquerda: Campos do formulário -->
                 <div class="space-y-4">
+
                     <!-- Nome -->
                     <Input
                         v-model="name"
@@ -41,7 +43,7 @@
                         placeholder="Digite seu email"
                     />
 
-                    <!-- Senha nova -->
+                    <!-- Nova senha -->
                     <Input
                         v-model="password"
                         type="password"
@@ -57,7 +59,7 @@
                         placeholder="Digite sua idade"
                     />
 
-                    <!-- Checkbox notificação -->
+                    <!-- Checkbox -->
                     <div class="flex items-center text-sm">
                         <input
                             type="checkbox"
@@ -75,18 +77,21 @@
                 <div
                     class="flex flex-col items-center justify-center space-y-4 border-t lg:border-t-0 lg:border-l border-gray-200 pt-6 lg:pt-0 lg:pl-6"
                 >
-                    <label class="text-gray-700 text-sm font-medium">Avatar</label>
+                    <label class="text-gray-700 text-sm font-medium">
+                        Avatar
+                    </label>
 
-                    <!-- Imagem do avatar -->
+                    <!-- Preview / placeholder -->
                     <div class="relative group">
-                        <!-- Se houver preview -->
+
+                        <!-- Avatar atual ou imagem nova -->
                         <img
                             v-if="previewAvatar"
                             :src="avatarSrc"
                             class="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover shadow-md border-2 border-green-600"
                         />
 
-                        <!-- Estado sem imagem -->
+                        <!-- Sem avatar -->
                         <div
                             v-else
                             class="w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400 text-sm"
@@ -94,7 +99,7 @@
                             Sem imagem
                         </div>
 
-                        <!-- Botão sobreposto: alterar avatar -->
+                        <!-- Botão de upload -->
                         <label
                             class="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition duration-300 cursor-pointer"
                         >
@@ -103,17 +108,19 @@
                         </label>
                     </div>
 
-                    <p class="text-xs text-gray-500">Formatos aceitos: JPG, PNG (máx. 5MB)</p>
+                    <p class="text-xs text-gray-500">
+                        Formatos aceitos: JPG, PNG (máx. 5MB)
+                    </p>
                 </div>
             </div>
 
             <!-- Botões -->
             <div class="mt-10 flex flex-col sm:flex-row justify-end gap-3">
-                
+
                 <!-- Botão salvar -->
                 <button
                     :disabled="loading"
-                    @click="handleUpdate"
+                    @click="validateAndUpdate"
                     :class="[
                         'px-6 py-3 rounded-lg text-white font-semibold transition duration-300',
                         loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-700 hover:bg-green-800'
@@ -122,7 +129,7 @@
                     {{ loading ? 'Salvando...' : 'Salvar alterações' }}
                 </button>
 
-                <!-- Botão excluir conta -->
+                <!-- Botão excluir -->
                 <button
                     :disabled="loading"
                     @click="deleteAccount"
@@ -161,12 +168,12 @@ export default {
             notification: false,
             avatarFile: null,
             previewAvatar: null,
-            loading: false,
+            loading: false, // estado global de loading
         };
     },
 
     computed: {
-        /* Retorna URL final do avatar */
+        /* Resolve URL do avatar */
         avatarSrc() {
             if (!this.previewAvatar) return null;
 
@@ -184,13 +191,13 @@ export default {
     },
 
     methods: {
-        /* Carrega dados do usuário na montagem */
+        /* Carrega dados do usuário */
         async loadUserData() {
             try {
+                this.loading = true;
+
                 const response = await axios.get("/api/users/me", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
+                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
 
                 const user = response.data;
@@ -204,6 +211,8 @@ export default {
 
             } catch (err) {
                 handleApiError(err);
+            } finally {
+                this.loading = false;
             }
         },
 
@@ -219,9 +228,23 @@ export default {
             reader.readAsDataURL(file);
         },
 
-        /* Salvar alterações */
+        /* Validação antes de salvar */
+        validateAndUpdate() {
+            const toast = useToast();
+
+            if (!this.name.trim()) return toast.error("Digite seu nome.");
+            if (!this.username.trim()) return toast.error("Digite seu nome de usuário.");
+            if (!this.email.trim()) return toast.error("Digite seu email.");
+
+            if (this.age && this.age < 0) return toast.error("Idade inválida.");
+
+            this.handleUpdate();
+        },
+
+        /* Envia alterações */
         async handleUpdate() {
             this.loading = true;
+
             try {
                 const formData = new FormData();
 
@@ -251,8 +274,10 @@ export default {
             }
         },
 
-        /* Excluir conta */
+        /* Exclusão da conta */
         async deleteAccount() {
+            const toast = useToast();
+
             try {
                 this.loading = true;
 
@@ -260,18 +285,17 @@ export default {
                 if (!confirmed) return (this.loading = false);
 
                 const response = await axios.delete("/api/users/me", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
+                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
 
                 if (response.data.success) {
-                    useToast().success("Até nunca mais.");
+                    toast.success("Conta excluída.");
                     localStorage.removeItem("token");
                     this.$router.push("/login");
                 }
+
             } catch (err) {
-                useToast().error("Erro ao excluir conta.");
+                toast.error("Erro ao excluir conta.");
             } finally {
                 this.loading = false;
             }
