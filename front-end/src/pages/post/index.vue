@@ -1,20 +1,31 @@
 <template>
     <Layout>
-        <div v-if="!loading" class="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-2xl p-8">
+        <!-- Container principal -->
+        <div
+            v-if="!loading"
+            class="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-2xl p-6 sm:p-8"
+        >
+            <!-- Título da página -->
             <h1 class="text-3xl font-bold text-green-800 mb-2">Criar Novo Post</h1>
             <p class="text-gray-500 mb-8 text-sm">
-                Compartilhe uma ideia, notícia ou atualização com sua comunidade.
+                Compartilhe algo com sua comunidade.
             </p>
 
+            <!-- ------- Seleção da comunidade ------- -->
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Comunidade {{selectedCommunityId}}
+                    <!-- Nome do campo -->
+                    Comunidade
                 </label>
+
                 <select
                     v-model="selectedCommunityId"
-                    class="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-green-600 focus:outline-none"
+                    class="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 bg-white
+                           focus:ring-2 focus:ring-green-600 focus:outline-none"
                 >
                     <option disabled value="">Selecione uma comunidade</option>
+
+                    <!-- Lista dinâmica -->
                     <option
                         v-for="community in communities"
                         :key="community._id"
@@ -25,12 +36,19 @@
                 </select>
             </div>
 
+            <!-- ------- Upload de imagem ------- -->
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     Imagem de capa
                 </label>
 
-                <div class="relative group w-full h-48 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 bg-gray-50">
+                <!-- Área da imagem responsiva -->
+                <div
+                    class="relative group w-full h-40 sm:h-48 rounded-xl overflow-hidden 
+                           border-2 border-gray-200 shadow-sm bg-gray-50
+                           hover:shadow-md transition-all"
+                >
+                    <!-- Prévia da imagem -->
                     <img
                         v-if="imagePreview"
                         :src="imagePreview"
@@ -38,6 +56,7 @@
                         class="w-full h-full object-cover"
                     />
 
+                    <!-- Estado sem imagem -->
                     <div
                         v-else
                         class="w-full h-full flex items-center justify-center text-gray-400 text-sm"
@@ -45,52 +64,56 @@
                         Nenhuma imagem
                     </div>
 
+                    <!-- Botão overlay -->
                     <label
-                        class="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                        class="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center 
+                               justify-center text-white text-xs font-semibold opacity-0 
+                               group-hover:opacity-100 transition cursor-pointer"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 7l6 6m0 0l6-6m-6 6V3m6 18H6a2 2 0 01-2-2v-5m16 7V6a2 2 0 00-2-2h-5" />
-                        </svg>
                         Alterar imagem
                         <input type="file" @change="handleFileUpload" accept="image/*" class="hidden" />
                     </label>
                 </div>
             </div>
 
+            <!-- ------- Campo título ------- -->
             <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Título
-                </label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Título</label>
+
                 <input
                     v-model="title"
                     type="text"
                     placeholder="Digite o título do post"
-                    class="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-green-600 focus:outline-none"
+                    class="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 bg-white
+                           focus:ring-2 focus:ring-green-600 focus:outline-none"
                 />
             </div>
 
+            <!-- ------- Campo descrição ------- -->
             <div class="mb-8">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     Descrição
                 </label>
+
                 <textarea
                     v-model="description"
                     rows="5"
-                    placeholder="No que está pensando hoje?"
-                    class="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-green-600 focus:outline-none resize-none"
+                    placeholder="No que está pensando?"
+                    class="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 bg-white resize-none
+                           focus:ring-2 focus:ring-green-600 focus:outline-none"
                 ></textarea>
             </div>
 
+            <!-- ------- Botão de publicar ------- -->
             <div class="flex justify-end">
                 <button
                     @click="createPost"
                     :disabled="isSubmitting"
                     :class="[
-                        'px-6 py-3 rounded-lg font-semibold transition cursor-pointer',
+                        'px-5 py-3 rounded-lg font-semibold transition',
                         isSubmitting
                             ? 'bg-gray-400 text-white cursor-not-allowed'
-                            : 'bg-green-700 hover:bg-green-800 text-white shadow-md'
+                            : 'bg-green-700 text-white hover:bg-green-800 shadow-md'
                     ]"
                 >
                     {{ isSubmitting ? "Publicando..." : "Publicar Post" }}
@@ -98,7 +121,8 @@
             </div>
         </div>
 
-        <Spinner v-else />
+        <!-- Spinner central enquanto carrega -->
+        <Spinner v-else class="mt-20" />
     </Layout>
 </template>
 
@@ -112,7 +136,7 @@ import Input from "@/components/Input.vue";
 
 export default {
     name: "CreatePost",
-    components: {Input, Layout, Spinner },
+    components: { Input, Layout, Spinner },
 
     data() {
         return {
@@ -128,27 +152,27 @@ export default {
     },
 
     methods: {
+        /* Prévia da imagem */
         handleFileUpload(event: Event) {
             const file = (event.target as HTMLInputElement).files?.[0];
             if (!file) return;
 
             this.imageFile = file;
 
-            // preview opcional
             const reader = new FileReader();
-            reader.onload = (e) => {
-                this.imagePreview = e.target?.result as string;
-            };
+            reader.onload = (e) => (this.imagePreview = e.target?.result as string);
             reader.readAsDataURL(file);
         },
 
+        /* Criar post */
         async createPost() {
             const toast = useToast();
 
             if (!this.selectedCommunityId)
                 return toast.error("Selecione uma comunidade.");
+
             if (!this.title || !this.description)
-                return toast.error("Preencha o título e a descrição.");
+                return toast.error("Título e descrição obrigatórios.");
 
             this.isSubmitting = true;
 
@@ -156,9 +180,8 @@ export default {
                 const form = new FormData();
                 form.append("title", this.title);
                 form.append("description", this.description);
-                if (this.imageFile) {
-                    form.append("image", this.imageFile); // arquivo real, não base64
-                }
+
+                if (this.imageFile) form.append("image", this.imageFile);
 
                 const response = await axios.post(
                     `/api/communities/${this.selectedCommunityId}/posts`,
@@ -172,9 +195,11 @@ export default {
 
                 if (response.data.success) {
                     toast.success("Post criado com sucesso!");
+
+                    /* Reset */
                     this.title = "";
                     this.description = "";
-                    this.imageFile = null;
+                    this.imageFile = "";
                     this.imagePreview = null;
                     this.selectedCommunityId = "";
                 }
@@ -185,12 +210,11 @@ export default {
             }
         },
 
+        /* Carregar comunidades */
         async loadData() {
             try {
                 const response = await axios.get("/api/communities", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`
-                    }
+                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
 
                 if (response.data.success) {
@@ -201,7 +225,7 @@ export default {
             } finally {
                 this.loading = false;
             }
-        }
+        },
     },
 
     mounted() {

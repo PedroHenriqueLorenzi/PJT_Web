@@ -1,43 +1,56 @@
 <template>
     <Layout>
-        <div class="p-6 max-w-5xl mx-auto">
-            <div class="flex items-center justify-between mb-8">
+        <!-- Container principal responsivo -->
+        <div class="p-4 md:p-6 max-w-5xl mx-auto">
+
+            <!-- Header da página -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
+
+                <!-- Título e subtítulo -->
                 <div>
-                    <h1 class="text-3xl font-bold text-green-800">Comunidades</h1>
+                    <h1 class="text-2xl md:text-3xl font-bold text-green-800">Comunidades</h1>
                     <p class="text-gray-500 text-sm mt-1">
                         Explore as comunidades disponíveis ou crie uma nova.
                     </p>
                 </div>
 
+                <!-- Botão criar comunidade -->
                 <RouterLink
                     to="/create-community"
-                    class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-100 transition hover:text-green-800 font-medium"
+                    class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-100 transition hover:text-green-800 font-medium self-start md:self-auto"
                 >
                     + Nova Comunidade
                 </RouterLink>
             </div>
 
+            <!-- Estados de carregamento e vazio -->
             <div v-if="loading" class="text-gray-400">Carregando comunidades...</div>
             <div v-else-if="communities.length === 0" class="text-gray-400">
                 Nenhuma comunidade encontrada.
             </div>
 
             <!-- Lista de comunidades -->
+            <!-- Grid responsivo: 1 col mobile / 2 col tablet / 3 col desktop -->
             <ul
                 v-else
-                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
             >
+                <!-- Card individual -->
                 <li
                     v-for="(community, communityIdx) in communities"
                     :key="community.id"
                     class="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-4 flex flex-col border border-gray-100"
                 >
+
+                    <!-- Imagem da comunidade -->
                     <div class="relative mb-4">
                         <img
                             :src="`${API}${community.img_url}`"
                             alt="Comunidade Imagem"
-                            class="w-full h-40 object-cover rounded-xl border border-gray-200"
+                            class="w-full h-40 md:h-48 object-cover rounded-xl border border-gray-200"
                         />
+
+                        <!-- Tag do tipo -->
                         <span
                             class="absolute top-2 left-2 px-2 py-1 bg-green-600 text-white text-xs rounded-full capitalize"
                         >
@@ -45,19 +58,28 @@
                         </span>
                     </div>
 
+                    <!-- Conteúdo do card -->
                     <div class="flex-1 flex flex-col justify-between">
+
+                        <!-- Título e descrição -->
                         <div>
                             <h2 class="text-lg font-semibold text-green-800 truncate">
                                 {{ community.name }}
                             </h2>
+
+                            <!-- Descrição com limite de 3 linhas -->
                             <p class="text-gray-600 text-sm mt-1 line-clamp-3">
                                 {{ community.description }}
                             </p>
                         </div>
 
+                        <!-- Rodapé do card: data + botões -->
                         <div class="mt-4 flex items-center justify-between text-xs text-gray-500">
+
+                            <!-- Data formatada -->
                             <span>Criado em {{ formatDate(community.created_at) }}</span>
 
+                            <!-- Botões Entrar/Sair -->
                             <div class="flex gap-2">
                                 <button
                                     v-if="!community.isMember"
@@ -75,6 +97,7 @@
                                     Sair
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 </li>
@@ -84,11 +107,14 @@
 </template>
 
 <script lang="ts">
+/* Layout principal e RouterLink */
 import Layout from "@/components/layout.vue";
 import { RouterLink } from "vue-router";
+
+/* Axios + Toast */
 import axios from "axios";
-import {handleApiError} from "@/helpers/functions.ts";
-import { useToast } from "vue-toastification"
+import { handleApiError } from "@/helpers/functions.ts";
+import { useToast } from "vue-toastification";
 
 export default {
     name: "CommunityList",
@@ -102,25 +128,34 @@ export default {
         return {
             API: import.meta.env.VITE_API,
 
+            /* Controle de carregamento */
             loading: false,
+
+            /* Caso falte imagem */
             defaultImage: "https://placehold.co/300x200?text=Sem+Imagem&font=montserrat",
 
+            /* Lista de comunidades */
             communities: [] as Array<any>,
         };
     },
 
     methods: {
+        /* Formata data para pt-BR */
         formatDate(date: string) {
             return new Date(date).toLocaleDateString("pt-BR");
         },
 
+        /* Ação: entrar na comunidade */
         async joinCommunity(communityIdx: number) {
             try {
-                const response = await axios.get(`/api/communities/${this.communities[communityIdx]._id}/join`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                const response = await axios.get(
+                    `/api/communities/${this.communities[communityIdx]._id}/join`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
                     }
-                });
+                );
 
                 if (response.data.success) {
                     this.communities[communityIdx].isMember = true;
@@ -131,13 +166,17 @@ export default {
             }
         },
 
+        /* Ação: sair da comunidade */
         async leaveCommunity(communityIdx: number) {
             try {
-                const response = await axios.get(`/api/communities/${this.communities[communityIdx]._id}/leave`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                const response = await axios.get(
+                    `/api/communities/${this.communities[communityIdx]._id}/leave`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
                     }
-                });
+                );
 
                 if (response.data.success) {
                     this.communities[communityIdx].isMember = false;
@@ -148,12 +187,13 @@ export default {
             }
         },
 
+        /* Carrega comunidades da API */
         async loadData() {
             try {
                 const response = await axios.get("/api/communities?users=all", {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`
-                    }
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
                 });
 
                 if (response.data.success) {
@@ -162,9 +202,10 @@ export default {
             } catch (err) {
                 handleApiError(err);
             }
-        }
+        },
     },
 
+    /* Carrega automaticamente ao abrir a página */
     mounted() {
         this.loadData();
     },
@@ -172,6 +213,7 @@ export default {
 </script>
 
 <style scoped>
+/* Limita descrição a 3 linhas */
 .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
