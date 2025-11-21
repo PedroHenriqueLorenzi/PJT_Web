@@ -12,7 +12,6 @@ import { upload } from "../middlewares/upload";
 import { Community } from '@/models/Community';
 import { CommunityMember } from '@/models/CommunityMembers';
 import { Post } from '@/models/Post';
-import { Comment } from '@/models/Comment';
 import { User } from '@/models/User';
 
 
@@ -24,7 +23,6 @@ router.get('/posts', async (req: Request, res: Response) => {
         const communityMembersModel = new CommunityMember(db);
         const postsModel = new Post(db);
         const communitiesModel = new Community(db);
-        const commentsModel = new Comment(db);
         const usersModel = new User(db);
 
         // Buscar comunidades onde o usuário é membro;
@@ -55,7 +53,6 @@ router.get('/posts', async (req: Request, res: Response) => {
         // Adicionar comentários, comunidade e dados do autor
         const formattedPosts = await Promise.all(
             posts.map(async (post: any) => {
-                const comments = await commentsModel.findByPost(post._id.toString());
                 const author = userMap.get(post.userId.toString());
 
                 return {
@@ -72,8 +69,6 @@ router.get('/posts', async (req: Request, res: Response) => {
                     userId: post.userId,
                     username: author.username || 'Usuário desconhecido',
                     userAvatar: author.avatar_url || null,
-
-                    comments,
                 };
             })
         );
@@ -84,37 +79,6 @@ router.get('/posts', async (req: Request, res: Response) => {
         });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: 'Internal error!' });
-    }
-});
-
-
-router.get('/posts/:id', async (req: Request, res: Response) => {
-    try {
-        await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
-
-    } catch (err) {
-        return res.status(500).json({ error: 'Internal error!' });
-    }
-});
-
-router.patch('/posts/:id', async (req: Request, res: Response) => {
-    try {
-        await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
-
-    } catch (err) {
-        return res.status(500).json({ error: 'Internal error!' });
-    }
-});
-
-router.delete('/posts/:id', async (req: Request, res: Response) => {
-    try {
-        await validatedToken(req.headers.authorization);
-        const db = await MongoSingleton.getInstance();
-
-    } catch (err) {
         return res.status(500).json({ error: 'Internal error!' });
     }
 });
@@ -175,6 +139,12 @@ router.post(
     }
 );
 
+
+
+
+
+
+// todo - João - implementar a rotas abaixo (Me retornar todos os posts de tal comunidade);
 router.get('/communities/:id/posts', async (req: Request, res: Response) => {
     try {
         await validatedToken(req.headers.authorization);
@@ -184,5 +154,19 @@ router.get('/communities/:id/posts', async (req: Request, res: Response) => {
         return res.status(500).json({ error: 'Internal error!' });
     }
 });
+
+
+// todo - João - implementar a rotas abaixo Obs: só o dono do post pode deletar;
+router.delete('/posts/:id', async (req: Request, res: Response) => {
+    try {
+        await validatedToken(req.headers.authorization);
+        const db = await MongoSingleton.getInstance();
+
+    } catch (err) {
+        return res.status(500).json({ error: 'Internal error!' });
+    }
+});
+
+
 
 export default router;

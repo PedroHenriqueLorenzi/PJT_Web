@@ -106,6 +106,7 @@ router.post('/communities', upload.single("image"), async (req: Request, res: Re
     }
 });
 
+// todo - Preciso de uma notificação para o dono da comunidade quando alguém entra. Ele pode aceitar ou rejeitar a entrada.
 // Entrar em uma comunidade;
 router.get('/communities/:id/join', async (req: Request, res: Response) => {
     try {

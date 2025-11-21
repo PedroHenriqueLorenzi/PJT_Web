@@ -20,6 +20,7 @@
 		"@types/jsonwebtoken": "^9.0.8",
 		"@types/multer": "^2.0.0",
 		"env-cmd": "^11.0.0",
-		"nodemon": "^3.1.10"
+		"nodemon": "^3.1.10",
+		"ts-node": "^10.9.2"
 	}
 }

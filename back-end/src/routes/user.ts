@@ -27,6 +27,7 @@ router.get('/users/me', async (req: Request, res: Response) => {
     }
 });
 
+// todo - João - implementar a rotas abaixo Obs: O usuario só pode deletar a própria conta;
 router.delete('/users/me', async (req: Request, res: Response) => {
     try {
 
@@ -83,7 +84,8 @@ router.get('/users', async (req: Request, res: Response) => {
     }
 });
 
-// fixme - falta aqui. (revisar)
+
+// todo -  revisar isso aqui.
 router.patch('/users/me', upload.single("avatar"), async (req: Request, res: Response) => {
     try {
         const user = await validatedToken(req.headers.authorization);
