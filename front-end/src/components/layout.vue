@@ -32,13 +32,103 @@
             </div>
 
             <!-- User info (desktop & mobile) -->
-            <div @click="$router.push('/config')" class="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition">
-                <span class="text-gray-300">{{ store.user.username }}</span>
-                <img
-                    :src="`${API}${store.user.avatar_url}`"
-                    alt="Usuário"
-                    class="w-10 h-10 rounded-full"
-                />
+            <div class="flex items-center gap-4 relative">
+
+                <!-- Botão do sino -->
+                <button
+                    @click="showNotifications = !showNotifications"
+                    class="relative text-gray-300 hover:text-green-400 transition"
+                >
+                    <BellIcon class="w-6 h-6" />
+
+                    <!-- Badge -->
+                    <span
+                        v-if="notifications.length > 0"
+                        class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow"
+                    >
+                        {{ notifications.length }}
+                    </span>
+                </button>
+
+                <!-- Dropdown -->
+                <transition name="fade">
+                    <div
+                        v-if="showNotifications"
+                        class="absolute right-12 top-10 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
+                    >
+                        <!-- Header -->
+                        <div class="p-3 font-semibold bg-gray-100 border-b">
+                            Notificações
+                        </div>
+
+                        <div class="max-h-80 overflow-y-auto">
+
+                            <!-- Sem notificações -->
+                            <div
+                                v-if="notifications.length === 0"
+                                class="p-4 text-center text-gray-500"
+                            >
+                                Nenhuma notificação
+                            </div>
+
+                            <!-- Lista -->
+                            <div
+                                v-for="n in notifications"
+                                :key="n._id"
+                                class="p-4 border-b last:border-none hover:bg-gray-50 transition"
+                            >
+                                <p class="font-medium text-gray-900">
+                                    {{ n.title }}
+                                </p>
+
+                                <p class="text-sm text-gray-600 mt-1">
+                                    {{ n.message }}
+                                </p>
+
+                                <p class="text-xs text-gray-400 mt-2">
+                                    {{ n.time }}
+                                </p>
+
+                                <!-- Botões de ação -->
+                                <div
+                                    v-if="n.type === 'join_request'"
+                                    class="flex gap-2 mt-4"
+                                >
+                                    <button
+                                        @click="acceptNotification(n._id)"
+                                        class="px-3 py-1 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700 transition w-full"
+                                    >
+                                        Aceitar
+                                    </button>
+
+                                    <button
+                                        @click="rejectNotification(n._id)"
+                                        class="px-3 py-1 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 transition w-full"
+                                    >
+                                        Rejeitar
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </transition>
+
+                <!-- Perfil -->
+                <div
+                    @click="$router.push('/config')"
+                    class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition"
+                >
+                    <span class="text-gray-300 font-medium">
+                        {{ store.user.username }}
+                    </span>
+
+                    <img
+                        :src="`${API}${store.user.avatar_url}`"
+                        alt="Usuário"
+                        class="w-9 h-9 rounded-full border border-gray-700 shadow"
+                    />
+                </div>
             </div>
         </header>
 
@@ -208,6 +298,8 @@
     } from "@heroicons/vue/24/outline";
 
     import { systemStore } from "../stores/index.js";
+    import axios from "axios";
+    import {handleApiError} from "@/helpers/functions.ts";
 
     export default {
         name: "Layout",
@@ -232,18 +324,76 @@
                     },
                     { text: "Criar um post", route: "/create-post", icon: PencilSquareIcon },
                 ],
+
+                notifications: [],
+                showNotifications: false,
             };
         },
         methods: {
             toggleSubmenu(item) {
                 item.open = !item.open;
             },
+
             logout() {
                 localStorage.removeItem("token");
                 this.$router.push("/login");
             },
+
             toggleMenu() {
                 this.isMenuOpen = !this.isMenuOpen;
+            },
+
+            formatTime(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+            },
+
+            async loadData() {
+                try {
+                    const response = await axios.get("/api/notifications", {
+                        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                    });
+
+                    if (response.data.success) {
+                        this.notifications = response.data.notifications.map(n => ({
+                            ...n,
+                            time: this.formatTime(n.createdAt)
+                        }));
+                    }
+                } catch (err) {
+                    handleApiError(err);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async acceptNotification(id) {
+                try {
+                    await axios.post(`/api/notifications/${id}/accept`, {}, {
+                        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                    });
+
+                    this.notifications = this.notifications.filter(n => n._id !== id);
+                } catch (err) {
+                    handleApiError(err);
+                }
+            },
+
+            async rejectNotification(id) {
+                try {
+                    await axios.post(`/api/notifications/${id}/reject`, {}, {
+                        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                    });
+
+                    this.notifications = this.notifications.filter(n => n._id !== id);
+                } catch (err) {
+                    handleApiError(err);
+                }
             },
         },
         mounted() {
@@ -252,6 +402,8 @@
                 this.store.user = JSON.parse(storedUser);
                 this.loading = false;
             }
+
+            this.loadData()
         },
         components: {
             HomeIcon,
@@ -282,5 +434,14 @@
     }
     .slide-leave-to {
         transform: translateX(-100%);
+    }
+    .fade-enter-active,
+    .fade-leave-active {
+        transition: opacity 0.15s ease;
+    }
+
+    .fade-enter-from,
+    .fade-leave-to {
+        opacity: 0;
     }
 </style>

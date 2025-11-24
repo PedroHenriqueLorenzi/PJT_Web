@@ -30,4 +30,9 @@ export class Post {
             .sort({ createdAt: -1 })
             .toArray();
     }
+
+    async delete(postId: string): Promise<boolean> {
+        const result = await this.collection().deleteOne({ _id: new ObjectId(postId) });
+        return result.deletedCount === 1;
+    }
 }

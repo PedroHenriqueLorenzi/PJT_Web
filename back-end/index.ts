@@ -7,7 +7,6 @@ import authRouter from './src/routes/auth';
 import communityRouter from './src/routes/communities';
 import notificationRouter from './src/routes/notifications';
 import postRouter from './src/routes/posts';
-import commentRouter from './src/routes/comments';
 import path from "path";
 
 async function main() {
@@ -34,7 +33,6 @@ async function main() {
         .use(authRouter)
         .use(notificationRouter)
         .use(postRouter)
-        .use(commentRouter)
         .use(communityRouter);
 
     app.listen(Number(process.env.PORT), process.env.ADDRESS, () => {

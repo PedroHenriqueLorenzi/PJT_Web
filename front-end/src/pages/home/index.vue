@@ -54,11 +54,14 @@
                                 {{ formatDate(post.createdAt) }}
                             </p>
                         </div>
+
+                        <button @click="deletePost(post._id)" class="text-gray-400 hover:text-red-400 transition ml-2 cursor-pointer">
+                            <TrashIcon class="w-5 h-5" />
+                        </button>
                     </div>
 
-                    <!-- Comunidade -->
-                    <div class="flex items-center gap-2 justify-end w-full md:w-auto mt-2 md:mt-0">
-                        <p class="text-sm font-medium text-gray-700 truncate max-w-[130px]">
+                    <div class="flex items-center gap-2 justify-end flex-nowrap w-auto mt-2 md:mt-0">
+                        <p class="hidden md:block text-sm font-medium text-gray-700 truncate max-w-[130px]">
                             {{ post.communityName }}
                         </p>
 
@@ -154,10 +157,11 @@ import axios from "axios";
 import { handleApiError } from "@/helpers/functions.js";
 import { systemStore } from "@/stores/index.js";
 import { useToast } from "vue-toastification";
+import { TrashIcon } from "@heroicons/vue/24/outline";
 
 export default {
     name: "Home",
-    components: { Layout },
+    components: {TrashIcon, Layout },
 
     data() {
         return {
@@ -165,7 +169,7 @@ export default {
             store: systemStore(),
 
             posts: [],
-            loading: true, // loading inicial do feed
+            loading: true,
         };
     },
 
@@ -219,10 +223,39 @@ export default {
             }
         },
 
+        async deletePost(id) {
+            try {
+                const response = await axios.delete(`api/posts/${id}`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
+
+                if (response.data.success) {
+                    useToast().success("Post deletado com sucesso.");
+                    window.location.reload();
+                }
+            } catch (err) {
+                useToast().error("Erro ao deletar o post.");
+            }
+        },
+
         /* Carrega posts da API */
         async loadData() {
             try {
-                const response = await axios.get("/api/posts", {
+                const communityId = this.$route.params.id;
+
+                let endpoint = "";
+
+                if (communityId) {
+                    // Feed por comunidade
+                    endpoint = `/api/communities/${communityId}/posts`;
+                } else {
+                    // Feed geral
+                    endpoint = `/api/posts`;
+                }
+
+                const response = await axios.get(endpoint, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
@@ -236,6 +269,7 @@ export default {
                         liking: false,
                     }));
                 }
+
             } catch (err) {
                 handleApiError(err);
             } finally {

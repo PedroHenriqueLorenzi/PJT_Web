@@ -69,6 +69,8 @@ router.get('/posts', async (req: Request, res: Response) => {
                     userId: post.userId,
                     username: author.username || 'Usuário desconhecido',
                     userAvatar: author.avatar_url || null,
+
+                    comments: []
                 };
             })
         );
@@ -77,16 +79,15 @@ router.get('/posts', async (req: Request, res: Response) => {
             success: true,
             posts: formattedPosts,
         });
-    } catch (err) {
-        console.error(err);
+    } catch (err: any) {
+        if (err.status === 401) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
         return res.status(500).json({ error: 'Internal error!' });
     }
 });
 
-router.post(
-    "/communities/:id/posts",
-    upload.single("image"),
-    async (req: Request, res: Response) => {
+router.post("/communities/:id/posts", upload.single("image"), async (req: Request, res: Response) => {
         try {
             const user = await validatedToken(req.headers.authorization);
             const db = await MongoSingleton.getInstance();
@@ -132,37 +133,133 @@ router.post(
                 success: true,
                 message: "Post criado com sucesso!",
             });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Internal error!" });
+        } catch (err: any) {
+            if (err.status === 401) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+            return res.status(500).json({ error: 'Internal error!' });
         }
     }
 );
 
 
 
-
-
-
-// todo - João - implementar a rotas abaixo (Me retornar todos os posts de tal comunidade);
 router.get('/communities/:id/posts', async (req: Request, res: Response) => {
     try {
         await validatedToken(req.headers.authorization);
         const db = await MongoSingleton.getInstance();
 
-    } catch (err) {
+        const communityId = req.params.id;
+
+        const communitiesModel = new Community(db);
+        const postsModel = new Post(db);
+        const usersModel = new User(db);
+
+        // Verificar se comunidade existe;
+        const community = await communitiesModel.findById(communityId);
+        if (!community) {
+            return res.status(404).json({ error: "Comunidade não encontrada." });
+        }
+
+        // Buscar posts da comunidade;
+        const posts = await postsModel.findByCommunityId(communityId);
+
+        if (!posts.length) {
+            return res.json({
+                success: true,
+                posts: [],
+                message: "Nenhum post encontrado nesta comunidade."
+            });
+        }
+
+        // Buscar todos usuários responsáveis pelos posts;
+        const userIds = [...new Set(posts.map((p: any) => p.userId.toString()))];
+        const users = await usersModel.findByIds(userIds);
+
+        // Criar mapa rápido de usuários;
+        const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
+
+        // Compor dados;
+        const formattedPosts = posts.map((post: any) => {
+            const author = userMap.get(post.userId.toString());
+
+            return {
+                _id: post._id,
+                title: post.title,
+                description: post.description,
+                img_url: post.img_url,
+                createdAt: post.createdAt,
+                updatedAt: post.updatedAt,
+
+                // comunidade
+                communityId: communityId,
+                communityName: community.name,
+                communityImg: community.img_url,
+
+                // autor
+                userId: post.userId,
+                username: author?.username || "Usuário desconhecido",
+                userAvatar: author?.avatar_url || null,
+
+                comments: []
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            posts: formattedPosts,
+        });
+
+    } catch (err: any) {
+        if (err.status === 401) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
         return res.status(500).json({ error: 'Internal error!' });
     }
 });
 
 
-// todo - João - implementar a rotas abaixo Obs: só o dono do post pode deletar;
+
 router.delete('/posts/:id', async (req: Request, res: Response) => {
     try {
-        await validatedToken(req.headers.authorization);
+        const user = await validatedToken(req.headers.authorization);
         const db = await MongoSingleton.getInstance();
 
-    } catch (err) {
+        const postId = req.params.id;
+
+        const postsModel = new Post(db);
+
+        const post = await postsModel.findById(postId);
+        if (!post) {
+            return res.status(404).json({ error: "Post não encontrado." });
+        }
+
+        if (post.userId.toString() !== user._id!.toString()) {
+            return res.status(403).json({ error: "Você não é o autor deste post." });
+        }
+
+        if (post.img_url) {
+            const fs = require("fs");
+            const path = require("path");
+
+            const filePath = path.join(__dirname, "../../public" + post.img_url);
+
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
+        await postsModel.delete(postId);
+
+        return res.json({
+            success: true,
+            message: "Post deletado com sucesso."
+        });
+
+    } catch (err: any) {
+        if (err.status === 401) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
         return res.status(500).json({ error: 'Internal error!' });
     }
 });

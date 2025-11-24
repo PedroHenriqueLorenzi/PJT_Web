@@ -41,15 +41,19 @@
                     <!-- Tipo -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+
                         <select
                             v-model="form.type"
-                            class="w-full border border-gray-300 rounded-lg p-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-700"
-                        >
+                            class="w-full border border-gray-300 rounded-lg p-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-700">
                             <option value="">Selecione um tipo</option>
-                            <option value="course">Curso</option>
-                            <option value="department">Departamento</option>
-                            <option value="sports">Esportes</option>
-                            <option value="student_club">Clube Estudantil</option>
+
+                            <option
+                                v-for="option in typeOptions"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -83,10 +87,6 @@
                             <input type="file" @change="handleFileUpload" accept="image/*" class="hidden" />
                         </label>
                     </div>
-
-                    <p class="text-xs text-gray-500 text-center w-40">
-                        Formatos aceitos: JPG, PNG (máx. 5MB)
-                    </p>
                 </div>
             </div>
 
@@ -134,6 +134,17 @@ export default {
 
             /* Loading do botão */
             loading: false,
+
+            typeOptions: [
+                { value: "course", label: "Curso" },
+                { value: "sports", label: "Esportes" },
+                { value: "student_club", label: "Clube Estudantil" },
+                { value: "library", label: "Biblioteca" },
+                { value: "research_group", label: "Grupo de Pesquisa" },
+                { value: "lab", label: "Laboratório" },
+                { value: "extension_project", label: "Projeto de Extensão" },
+                { value: "event", label: "Evento Universitário" }
+            ]
         };
     },
 

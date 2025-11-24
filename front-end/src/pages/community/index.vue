@@ -45,20 +45,17 @@
                 >
 
                     <!-- Imagem -->
-                    <div class="relative mb-4">
+                    <RouterLink :to="`/community/${community._id}`" class="block relative mb-4">
                         <img
                             :src="community.img_url ? `${API}${community.img_url}` : defaultImage"
                             alt="Comunidade"
-                            class="w-full h-40 md:h-48 object-cover rounded-xl border border-gray-200"
+                            class="w-full h-40 md:h-48 object-cover rounded-xl border border-gray-200 cursor-pointer hover:opacity-90 transition"
                         />
 
-                        <!-- Tag de tipo -->
-                        <span
-                            class="absolute top-2 left-2 px-2 py-1 bg-green-600 text-white text-xs rounded-full capitalize"
-                        >
+                        <span class="absolute top-2 left-2 px-2 py-1 bg-green-600 text-white text-xs rounded-full capitalize">
                             {{ community.type }}
                         </span>
-                    </div>
+                    </RouterLink>
 
                     <!-- Texto do card -->
                     <div class="flex-1 flex flex-col justify-between">
@@ -78,8 +75,9 @@
 
                             <!-- Seguir/Entrar -->
                             <div class="flex gap-2">
+                                <!-- Entrar -->
                                 <button
-                                    v-if="!community.isMember"
+                                    v-if="!community.isMember && !community.localPending"
                                     @click="joinCommunity(i)"
                                     :disabled="actionLoading"
                                     class="text-green-700 font-medium hover:text-green-900 transition cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed"
@@ -87,8 +85,17 @@
                                     {{ actionLoading ? '...' : 'Entrar' }}
                                 </button>
 
+                                <!-- Pendente -->
+                                <span
+                                    v-else-if="community.localPending"
+                                    class="text-yellow-600 font-medium"
+                                >
+                                    Pendente
+                                </span>
+
+                                <!-- Sair (só aparece depois do reload da página) -->
                                 <button
-                                    v-else
+                                    v-else-if="community.isMember"
                                     @click="leaveCommunity(i)"
                                     :disabled="actionLoading"
                                     class="text-red-600 font-medium hover:text-red-800 transition cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed"
@@ -152,7 +159,7 @@ export default {
                 );
 
                 if (res.data.success) {
-                    this.communities[i].isMember = true;
+                    this.communities[i].localPending = true;
                     toast.success(res.data.message);
                 }
             } catch (err) {

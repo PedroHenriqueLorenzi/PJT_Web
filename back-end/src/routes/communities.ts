@@ -10,6 +10,8 @@ import {validatedToken} from "@/helpers/functions";
 // Models;
 import {Community} from "@/models/Community";
 import {CommunityMember} from "@/models/CommunityMembers";
+import {Notification} from "@/models/Notification";
+import {ObjectId} from "mongodb";
 
 // Listar todas as comunidades;
 router.get('/communities', async (req: Request, res: Response) => {
@@ -89,8 +91,9 @@ router.post('/communities', upload.single("image"), async (req: Request, res: Re
             name,
             description,
             type,
-            created_by: user._id as string,
+            created_by: new ObjectId(user._id),
             img_url,
+            ownerId: new ObjectId(user._id),
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -106,7 +109,6 @@ router.post('/communities', upload.single("image"), async (req: Request, res: Re
     }
 });
 
-// todo - Preciso de uma notificação para o dono da comunidade quando alguém entra. Ele pode aceitar ou rejeitar a entrada.
 // Entrar em uma comunidade;
 router.get('/communities/:id/join', async (req: Request, res: Response) => {
     try {
@@ -115,35 +117,55 @@ router.get('/communities/:id/join', async (req: Request, res: Response) => {
 
         const communitiesModel = new Community(db);
         const communityMembersModel = new CommunityMember(db);
+        const notificationsModel = new Notification(db);
 
         const communityId = req.params.id;
 
         const community = await communitiesModel.findById(communityId);
         if (!community) {
-            return res.status(404).json({ error: 'Community not found' });
+            return res.status(404).json({error: 'Community not found'});
         }
 
+        // Verificar se já tem pedido pendente
+        const existing = await communityMembersModel.findMembership(
+            user._id as string,
+            communityId
+        );
+
+        if (existing) {
+            return res.status(400).json({
+                error: 'Você já enviou um pedido ou já está na comunidade.'
+            });
+        }
+
+        // Criar entrada pendente
         await communityMembersModel.create({
-            communityId, // @ts-ignore
-            userId: user._id,
-            role: 'member',
-            joinedAt: new Date(),
+            communityId: new ObjectId(communityId),
+            userId: new ObjectId(user._id),
+            role: 'pending',
+            active: false,
+            joinedAt: new Date()
+        });
+
+        // Criar notificação para o dono
+        await notificationsModel.create({
+            userId: new ObjectId(community.ownerId),
+            type: "join_request",
+            requesterId: new ObjectId(user._id),
+            communityId: new ObjectId(communityId),
+            message: `${user.username} pediu para entrar em ${community.name}`
         });
 
         return res.status(200).json({
             success: true,
-            message: 'Successfully joined the community',
+            message: 'Pedido enviado para o dono da comunidade.',
         });
 
     } catch (err: any) {
         console.error(err);
-        if (err.status === 401) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-        return res.status(500).json({ error: 'Internal error!' });
+        return res.status(500).json({error: 'Internal error!'});
     }
 });
-
 
 // Sair de uma comunidade;
 router.get('/communities/:id/leave', async (req: Request, res: Response) => {

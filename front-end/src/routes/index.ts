@@ -18,6 +18,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: '/users',
+        name: 'users',
+        component: Users,
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/login',
         name: 'login',
         component: login,
@@ -46,9 +52,9 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
-        path: '/users',
-        name: 'users',
-        component: Users,
+        path: "/community/:id",
+        name: "community-details",
+        component: home,
         meta: { requiresAuth: true },
     },
     {

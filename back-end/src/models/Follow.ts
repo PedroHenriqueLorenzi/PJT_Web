@@ -35,32 +35,4 @@ export class Follow {
 
         return !!doc;
     }
-
-    // Lista pessoas que o usuário segue
-    async getFollowing(userId: string): Promise<FollowInterface[]> {
-        return this.collection()
-            .find({ followerId: new ObjectId(userId) })
-            .toArray();
-    }
-
-    // Lista seguidores de um usuário
-    async getFollowers(userId: string): Promise<FollowInterface[]> {
-        return this.collection()
-            .find({ followingId: new ObjectId(userId) })
-            .toArray();
-    }
-
-    // Contar quantos o usuário segue
-    async countFollowing(userId: string): Promise<number> {
-        return this.collection().countDocuments({
-            followerId: new ObjectId(userId)
-        });
-    }
-
-    // Contar seguidores
-    async countFollowers(userId: string): Promise<number> {
-        return this.collection().countDocuments({
-            followingId: new ObjectId(userId)
-        });
-    }
 }

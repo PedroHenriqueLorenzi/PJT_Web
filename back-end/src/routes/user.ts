@@ -27,9 +27,35 @@ router.get('/users/me', async (req: Request, res: Response) => {
     }
 });
 
-// todo - João - implementar a rotas abaixo Obs: O usuario só pode deletar a própria conta;
 router.delete('/users/me', async (req: Request, res: Response) => {
     try {
+        // Validar token e obter usuário autenticado
+        const authUser = await validatedToken(req.headers.authorization);
+
+        const db = await MongoSingleton.getInstance();
+        const userModel = new User(db);
+        const followModel = new Follow(db);
+
+        // Verificar se o usuário realmente existe
+        const user = await userModel.collection().findOne({ _id: authUser._id });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Remover o próprio usuário
+        await userModel.collection().deleteOne({ _id: authUser._id });
+
+        // Remover follows onde ele segue alguém
+        await followModel.collection().deleteMany({ followerId: authUser._id });
+
+        // Remover follows onde alguém segue ele
+        await followModel.collection().deleteMany({ followingId: authUser._id });
+
+        return res.status(200).json({
+            success: true,
+            message: 'User deleted successfully'
+        });
 
     } catch (err: any) {
         if (err.status === 401) {
