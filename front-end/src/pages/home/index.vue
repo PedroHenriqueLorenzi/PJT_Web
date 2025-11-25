@@ -1,7 +1,28 @@
 <template>
     <Layout>
+        <div
+            v-if="unauthorized"
+            class="flex flex-col items-center justify-center py-24 px-6 text-gray-700"
+        >
+            <div class="bg-white shadow-lg rounded-2xl p-10 max-w-md w-full text-center border border-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 mx-auto mb-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 4a8 8 0 018 8 8 8 0 01-8 8 8 8 0 01-8-8 8 8 0 018-8z" />
+                </svg>
+
+                <h2 class="text-2xl font-semibold mb-2">
+                    Acesso restrito
+                </h2>
+
+                <p class="text-gray-600">
+                    Você não tem permissão para visualizar esta comunidade.<br>
+                    Entre em contato com o administrador caso ache que isso é um erro.
+                </p>
+            </div>
+        </div>
+
         <!-- Container geral -->
-        <div class="max-w-2xl mx-auto mt-8 px-4 space-y-6">
+        <div v-else class="max-w-2xl mx-auto mt-8 px-4 space-y-6">
 
             <!-- Título -->
             <h2 class="text-3xl font-semibold tracking-wide mb-4 text-center text-gray-800">
@@ -170,6 +191,7 @@ export default {
 
             posts: [],
             loading: true,
+            unauthorized: false,
         };
     },
 
@@ -271,6 +293,10 @@ export default {
                 }
 
             } catch (err) {
+                if (err.response?.status === 404) {
+                    this.unauthorized = true;
+                }
+
                 handleApiError(err);
             } finally {
                 this.loading = false;

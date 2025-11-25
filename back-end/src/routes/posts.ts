@@ -13,7 +13,6 @@ import { Community } from '@/models/Community';
 import { CommunityMember } from '@/models/CommunityMembers';
 import { Post } from '@/models/Post';
 import { User } from '@/models/User';
-import {ObjectId} from "mongodb";
 
 
 router.get('/posts', async (req: Request, res: Response) => {
@@ -148,7 +147,7 @@ router.post("/communities/:id/posts", upload.single("image"), async (req: Reques
 
 router.get('/communities/:id/posts', async (req: Request, res: Response) => {
     try {
-        await validatedToken(req.headers.authorization);
+        const user = await validatedToken(req.headers.authorization);
         const db = await MongoSingleton.getInstance();
 
         const communityId = req.params.id;
@@ -156,10 +155,15 @@ router.get('/communities/:id/posts', async (req: Request, res: Response) => {
         const communitiesModel = new Community(db);
         const postsModel = new Post(db);
         const usersModel = new User(db);
+        const communityMembersModel = new CommunityMember(db);
 
-        // Verificar se comunidade existe;
+        const member = await communityMembersModel.findMembership(
+            user._id!.toString(),
+            communityId
+        );
         const community = await communitiesModel.findById(communityId);
-        if (!community) {
+
+        if (!community || !member) {
             return res.status(404).json({ error: "Comunidade não encontrada." });
         }
 
