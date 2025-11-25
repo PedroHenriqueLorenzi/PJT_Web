@@ -32,8 +32,8 @@ export class CommunityMember {
     // Encontra um membro específico em uma comunidade;
     async findMembership(userId: string, communityId: string): Promise<CommunityMemberInterface | null> {
         return this.collection().findOne({
-            userId: userId,
-            communityId: communityId,
+            userId: new ObjectId(userId),
+            communityId: new ObjectId(communityId),
         });
     }
 

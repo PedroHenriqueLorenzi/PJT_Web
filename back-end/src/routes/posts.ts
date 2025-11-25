@@ -13,6 +13,7 @@ import { Community } from '@/models/Community';
 import { CommunityMember } from '@/models/CommunityMembers';
 import { Post } from '@/models/Post';
 import { User } from '@/models/User';
+import {ObjectId} from "mongodb";
 
 
 router.get('/posts', async (req: Request, res: Response) => {
@@ -111,9 +112,10 @@ router.post("/communities/:id/posts", upload.single("image"), async (req: Reques
             }
 
             const isMember = await membersModel.findMembership(
-                user._id as string,
+                user._id!.toString(),
                 communityId
             );
+
             if (!isMember) {
                 return res.status(403).json({ error: "Você precisa ser membro para postar." });
             }
