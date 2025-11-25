@@ -6,26 +6,14 @@ O modelo de dados envolve usuários, comunidades, postagens e comentários.
 Esse sistema funcionaria como uma rede social acadêmica segura, moderna e colaborativa, fortalecendo a comunicação dentro da universidade.
 
 
-## 📋 Requisitos do Projeto
+## Nomes:
+- Thalles R. Dreissig (22200518)
+- Pedro Henrique Lorenzi Martins (24100923)
+- João Luiz Tuyama Angheben (24100902)
 
-✅ A aplicação deve ser acessível apenas após autenticação  
-✅ A aplicação deve permitir o cadastro de novos usuários  
-✅ Quando autenticado, o usuário deve poder atualizar seu cadastro  
-✅ Deve existir alguma base de dados no back-end (ex: **MongoDB**)  
-🛠️ Deve ser possível compartilhar dados entre usuários  
-🛠️ A aplicação deve ficar disponível 24/7 em algum servidor da **Nuvem UFSC** (Aula 06) ou servidor externo  
-🛠️ O front-end deve ser **responsivo** (desktop e mobile)
 
----
+## Repositorio:
+https://github.com/PedroHenriqueLorenzi/PJT_Web
 
-## ⚙️ Configuração e Instalação
-- cd backend
-  npm install 
-  npm run dev
-
-- cd frontend
-  npm install
-  npm run dev
-
-### 🔧 Requisitos
-- **Node.js v22** ou superior
+## Projeto:
+http://jacarezinho.t.r.dreissig.vms.ufsc.br:5000/
